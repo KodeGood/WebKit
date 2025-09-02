@@ -953,7 +953,7 @@ void GraphicsContextSkia::beginTransparencyLayer(CompositeOperator operation, Bl
         return;
 
     GraphicsContext::beginTransparencyLayer(operation, blendMode);
-    saveLayer(m_state.alpha(), CompositeMode(operation, blendMode));
+    saveLayer(m_state.alpha(), CompositeMode { operation, blendMode });
 }
 
 void GraphicsContextSkia::endTransparencyLayer()
