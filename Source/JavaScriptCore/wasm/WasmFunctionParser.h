@@ -546,7 +546,7 @@ template<typename Context>
 auto FunctionParser<Context>::parseBody() -> PartialResult
 {
     const uint32_t enclosedStackBegin = 0;
-    m_controlStack.constructAndAppend(FixedVector<TypedExpression> { }, enclosedStackBegin, 0, m_context.addTopLevel(BlockSignature { m_signature }));
+    m_controlStack.append(ControlEntry { FixedVector<TypedExpression> { }, enclosedStackBegin, 0, m_context.addTopLevel(BlockSignature { m_signature }) });
     uint8_t op = 0;
     while (m_controlStack.size()) {
         m_currentOpcodeStartingOffset = m_offset;
@@ -663,7 +663,7 @@ auto FunctionParser<Context>::binaryCompareCase(OpType op, BinaryOperationHandle
             if (argumentCount)
                 elseSave = FixedVector<TypedExpression>::createWithSizeFromGenerator(argumentCount, [&](size_t i) { return m_expressionStack[parentStackHeight + i]; });
             ASSERT(m_currentStackBegin == parentEntryBegin());
-            m_controlStack.constructAndAppend(WTF::move(elseSave), parentStackHeight, getLocalInitStackHeight(), WTF::move(control));
+            m_controlStack.append(ControlEntry { WTF::move(elseSave), parentStackHeight, getLocalInitStackHeight(), WTF::move(control) });
             m_currentStackBegin = parentStackHeight;
             m_context.didParseOpcode();
             return { };
@@ -730,7 +730,7 @@ auto FunctionParser<Context>::unaryCompareCase(OpType op, UnaryOperationHandler 
             if (argumentCount)
                 elseSave = FixedVector<TypedExpression>::createWithSizeFromGenerator(argumentCount, [&](size_t i) { return m_expressionStack[parentStackHeight + i]; });
             ASSERT(m_currentStackBegin == parentEntryBegin());
-            m_controlStack.constructAndAppend(WTF::move(elseSave), parentStackHeight, getLocalInitStackHeight(), WTF::move(control));
+            m_controlStack.append(ControlEntry { WTF::move(elseSave), parentStackHeight, getLocalInitStackHeight(), WTF::move(control) });
             m_currentStackBegin = parentStackHeight;
             return { };
         }
@@ -2108,7 +2108,7 @@ ALWAYS_INLINE void FunctionParser<Context>::switchToBlock(ControlType&& block, u
 {
     ASSERT(m_currentStackBegin == parentEntryBegin());
     const uint32_t newBegin = m_expressionStack.size() - argumentCount;
-    m_controlStack.constructAndAppend(FixedVector<TypedExpression> { }, newBegin, getLocalInitStackHeight(), WTF::move(block));
+    m_controlStack.append(ControlEntry { FixedVector<TypedExpression> { }, newBegin, getLocalInitStackHeight(), WTF::move(block) });
     m_currentStackBegin = newBegin;
 }
 
@@ -3560,7 +3560,7 @@ auto FunctionParser<Context>::parseExpression() -> PartialResult
         WASM_TRY_ADD_TO_CONTEXT(addLoop(WTF::move(inlineSignature), args, loop, m_loopIndex++));
 
         ASSERT(m_currentStackBegin == parentEntryBegin());
-        m_controlStack.constructAndAppend(FixedVector<TypedExpression> { }, parentStackHeight, getLocalInitStackHeight(), WTF::move(loop));
+        m_controlStack.append(ControlEntry { FixedVector<TypedExpression> { }, parentStackHeight, getLocalInitStackHeight(), WTF::move(loop) });
         m_currentStackBegin = parentStackHeight;
         return { };
     }
@@ -3584,7 +3584,7 @@ auto FunctionParser<Context>::parseExpression() -> PartialResult
         if (argumentCount)
             elseSave = FixedVector<TypedExpression>::createWithSizeFromGenerator(argumentCount, [&](size_t i) { return m_expressionStack[parentStackHeight + i]; });
         ASSERT(m_currentStackBegin == parentEntryBegin());
-        m_controlStack.constructAndAppend(WTF::move(elseSave), parentStackHeight, getLocalInitStackHeight(), WTF::move(control));
+        m_controlStack.append(ControlEntry { WTF::move(elseSave), parentStackHeight, getLocalInitStackHeight(), WTF::move(control) });
         m_currentStackBegin = parentStackHeight;
         return { };
     }
@@ -3618,7 +3618,7 @@ auto FunctionParser<Context>::parseExpression() -> PartialResult
         WASM_TRY_ADD_TO_CONTEXT(addTry(WTF::move(inlineSignature), args, control));
 
         ASSERT(m_currentStackBegin == parentEntryBegin());
-        m_controlStack.constructAndAppend(FixedVector<TypedExpression> { }, parentStackHeight, getLocalInitStackHeight(), WTF::move(control));
+        m_controlStack.append(ControlEntry { FixedVector<TypedExpression> { }, parentStackHeight, getLocalInitStackHeight(), WTF::move(control) });
         m_currentStackBegin = parentStackHeight;
         return { };
     }

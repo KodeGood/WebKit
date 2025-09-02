@@ -143,7 +143,7 @@ struct SkPDFStructElem {
                 return;
             }
             if (this->empty()) {
-                fData.emplace(ci, ci);
+                fData.emplace(Data{ci, ci});
                 return;
             }
             if (ci < fData->fFirst) {

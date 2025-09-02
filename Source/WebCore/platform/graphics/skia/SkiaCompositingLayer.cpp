@@ -574,7 +574,7 @@ bool SkiaCompositingLayer::paint(SkCanvas& canvas, std::optional<Damage>& frameD
         m_layerRectTracker->advanceToNextFrame();
 
         PaintContext collectContext;
-        collectContext.collectState.emplace(*frameDamage, *m_layerRectTracker);
+        collectContext.collectState.emplace(PaintContext::CollectState { *frameDamage, *m_layerRectTracker, { } });
 
         // Sized like the canvas that will be drawn into, so both walks clip against the same device
         // bounds. The layer's own size is in layer coordinates, which the root transform scales to the

@@ -177,7 +177,7 @@ static RenderPtr<RenderObject> createContentRenderer(const Style::Content::Quote
 void RenderTreeUpdater::GeneratedContent::createContentRenderers(RenderTreeBuilder& builder, RenderElement& pseudoRenderer, const Style::ComputedStyle& style, PseudoElementType pseudoElementType)
 {
     if (auto* contentData = style.content().tryData()) {
-        auto altText = contentData->alt.value_or(String { nullString() });
+        auto altText = contentData->alt.value_or(Style::String { nullString() });
         for (auto& contentItem : contentData->visible) {
             WTF::switchOn(contentItem,
                 [&](const auto& item) {

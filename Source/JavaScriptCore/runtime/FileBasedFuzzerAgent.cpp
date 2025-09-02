@@ -112,7 +112,7 @@ SpeculatedType FileBasedFuzzerAgent::getPredictionInternal(CodeBlock* codeBlock,
         return original;
     }
     if (Options::dumpFuzzerAgentPredictions())
-        dataLogLn(YELLOW(target.opcodeId), " ", CYAN(target.lookupKey), " original: ", CYAN(BOLD(SpeculationDump(original))), " generated: ", MAGENTA(BOLD(SpeculationDump(*generated))));
+        dataLogLn(YELLOW(target.opcodeId), " ", CYAN(target.lookupKey), " original: ", CYAN(BOLD(SpeculationDump { original })), " generated: ", MAGENTA(BOLD(SpeculationDump { *generated })));
     return *generated;
 }
 

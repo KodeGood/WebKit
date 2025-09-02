@@ -100,13 +100,13 @@ struct ValueProfileBase {
         SpeculatedType prediction = computeUpdatedPrediction(locker);
         
         StringPrintStream out;
-        out.print("predicting ", SpeculationDump(prediction));
+        out.print("predicting ", SpeculationDump { prediction });
         return out.toCString();
     }
     
     void dump(PrintStream& out)
     {
-        out.print("sampled before = ", isSampledBefore(), " live samples = ", numberOfSamples(), " prediction = ", SpeculationDump(m_prediction));
+        out.print("sampled before = ", isSampledBefore(), " live samples = ", numberOfSamples(), " prediction = ", SpeculationDump { m_prediction });
         bool first = true;
         for (unsigned i = 0; i < totalNumberOfBuckets; ++i) {
             JSValue value = JSValue::decode(m_buckets[i]);

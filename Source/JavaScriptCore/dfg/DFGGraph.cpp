@@ -244,7 +244,7 @@ void Graph::dump(PrintStream& out, const char* prefixStr, Node* node, DumpContex
     if (toCString(NodeFlagsDump(node->flags())) != "<empty>"_s)
         out.print(comma, NodeFlagsDump(node->flags()));
     if (node->prediction())
-        out.print(comma, SpeculationDump(node->prediction()));
+        out.print(comma, SpeculationDump { node->prediction() });
     if (node->hasNumberOfArgumentsToSkip())
         out.print(comma, "numberOfArgumentsToSkip = "_s, node->numberOfArgumentsToSkip());
     if (node->hasNumberOfBoundArguments())
@@ -462,9 +462,9 @@ void Graph::dump(PrintStream& out, const char* prefixStr, Node* node, DumpContex
     out.print(")");
 
     if (node->accessesStack(*this) && node->tryGetVariableAccessData())
-        out.print("  predicting "_s, SpeculationDump(node->tryGetVariableAccessData()->prediction()));
+        out.print("  predicting "_s, SpeculationDump { node->tryGetVariableAccessData()->prediction() });
     else if (node->hasHeapPrediction())
-        out.print("  predicting "_s, SpeculationDump(node->getHeapPrediction()));
+        out.print("  predicting "_s, SpeculationDump { node->getHeapPrediction() });
 
     if (!inIonGraph)
         out.print("\n"_s);

@@ -508,7 +508,7 @@ void AbstractValue::dump(PrintStream& out) const
 
 void AbstractValue::dumpInContext(PrintStream& out, DumpContext* context) const
 {
-    out.print("(", SpeculationDump(m_type));
+    out.print("(", SpeculationDump { m_type });
     if (m_type & SpecCell) {
         out.print(
             ", ", ArrayModesDump(m_arrayModes), ", ",
