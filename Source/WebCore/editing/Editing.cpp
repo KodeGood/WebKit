@@ -1507,7 +1507,11 @@ SimpleRange adjustToVisuallyContiguousRange(const SimpleRange& range)
 
 EnclosingLayerInfomation computeEnclosingLayer(const SimpleRange& range)
 {
-    auto [start, end] = positionsForRange(range);
+    // Avoid structured binding here because some Clang configs don’t allow
+    // referencing/capturing structured bindings in nested contexts.
+    auto positions = positionsForRange(range);
+    auto start = positions.start;
+    auto end = positions.end;
 
     if (start.isOrphan() || end.isOrphan())
         return { };

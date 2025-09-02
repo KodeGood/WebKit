@@ -766,7 +766,11 @@ void DocumentFullscreen::dispatchPendingEvents()
 
     // Step 3:
     while (!pendingEvents.isEmpty()) {
-        auto [eventType, element] = pendingEvents.takeFirst();
+        // Avoid structured binding here because older Clang versions
+        // don’t allow referencing/capturing structured bindings in a nested lambda.
+        auto nextEvent = pendingEvents.takeFirst(); // pair<EventType, GCReachableRef<Element>>
+        auto eventType = nextEvent.first;
+        auto element = WTF::move(nextEvent.second); // GCReachableRef is move-only
 
         // Gaining or losing fullscreen state may change viewport arguments
         element->protectedDocument()->updateViewportArguments();

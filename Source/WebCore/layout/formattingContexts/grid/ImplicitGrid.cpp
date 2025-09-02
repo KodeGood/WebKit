@@ -105,7 +105,9 @@ void ImplicitGrid::insertDefiniteRowItem(const UnplacedGridItem& unplacedGridIte
     ASSERT(columnSpan == 1);
 
     ASSERT(unplacedGridItem.hasDefiniteRowPosition() && !unplacedGridItem.hasDefiniteColumnPosition());
-    auto [normalizedRowStart, normalizedRowEnd] = unplacedGridItem.normalizedRowStartEnd();
+    auto [normalizedRowStartBinding, normalizedRowEndBinding] = unplacedGridItem.normalizedRowStartEnd();
+    auto& normalizedRowStart = normalizedRowStartBinding;
+    auto& normalizedRowEnd = normalizedRowEndBinding;
     // FIXME: Support multi-row spans
     ASSERT(normalizedRowEnd - normalizedRowStart == 1);
 

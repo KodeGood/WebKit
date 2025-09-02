@@ -108,7 +108,9 @@ UnplacedGridItems GridFormattingContext::constructUnplacedGridItems() const
 void GridFormattingContext::layout(GridLayoutConstraints layoutConstraints)
 {
     auto unplacedGridItems = constructUnplacedGridItems();
-    auto [ usedTrackSizes, gridItemRects ] = GridLayout { *this }.layout(layoutConstraints, unplacedGridItems);
+    auto [usedTrackSizesBinding, gridItemRectsBinding] = GridLayout { *this }.layout(layoutConstraints, unplacedGridItems);
+    auto& usedTrackSizes = usedTrackSizesBinding;
+    auto& gridItemRects = gridItemRectsBinding;
 
     // Grid layout positions each item within its containing block which is the grid area.
     // Here we translate it to the coordinate space of the grid.
