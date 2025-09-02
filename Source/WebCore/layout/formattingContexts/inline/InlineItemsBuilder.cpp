@@ -871,7 +871,9 @@ bool InlineItemsBuilder::buildInlineItemListForTextFromBreakingPositionsCache(co
     ASSERT(contentLength);
 
     CheckedRef fontCascade = style->fontCascade();
-    auto [ deferNonWhitespaceMeasurement, deferWhitespaceMeasurement ] = shouldDeferTextMeasurement(inlineTextBox);
+    auto [deferNonWhitespaceMeasurementBinding, deferWhitespaceMeasurementBinding] = shouldDeferTextMeasurement(inlineTextBox);
+    auto& deferNonWhitespaceMeasurement = deferNonWhitespaceMeasurementBinding;
+    auto& deferWhitespaceMeasurement = deferWhitespaceMeasurementBinding;
     auto singleSpaceWidth = !deferWhitespaceMeasurement ? std::optional(std::max(0.f, TextUtil::singleSpaceWidth(fontCascade.get(), inlineTextBox.canUseSimplifiedContentMeasuring()))) : std::nullopt;
     auto mayHaveGlyphOverflow = !inlineTextBox.canUseSimpleFontCodePath() || fontCascade->primaryFont().origin() == FontOrigin::Remote;
 
@@ -942,7 +944,9 @@ void InlineItemsBuilder::handleTextContent(const InlineTextBox& inlineTextBox, I
     m_textContentPopulatedFromCache = false;
     CheckedRef style = inlineTextBox.style();
     CheckedRef fontCascade = style->fontCascade();
-    auto [ deferNonWhitespaceMeasurement, deferWhitespaceMeasurement ] = shouldDeferTextMeasurement(inlineTextBox);
+    auto [deferNonWhitespaceMeasurementBinding, deferWhitespaceMeasurementBinding] = shouldDeferTextMeasurement(inlineTextBox);
+    auto& deferNonWhitespaceMeasurement = deferNonWhitespaceMeasurementBinding;
+    auto& deferWhitespaceMeasurement = deferWhitespaceMeasurementBinding;
     auto mayHaveGlyphOverflow = !inlineTextBox.canUseSimpleFontCodePath() || fontCascade->primaryFont().origin() == FontOrigin::Remote;
     auto singleSpaceWidth = !deferWhitespaceMeasurement ? std::optional(std::max(0.f, TextUtil::singleSpaceWidth(fontCascade.get(), inlineTextBox.canUseSimplifiedContentMeasuring()))) : std::nullopt;
     auto shouldPreserveSpacesAndTabs = TextUtil::shouldPreserveSpacesAndTabs(inlineTextBox);

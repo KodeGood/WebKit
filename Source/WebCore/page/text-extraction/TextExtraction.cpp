@@ -2896,7 +2896,8 @@ RefPtr<Element> containerElementForSearchTexts(const LocalFrame& frame, Vector<S
 
 std::optional<SimpleRange> rangeForExtractedText(const LocalFrame& frame, ExtractedText&& extractedText)
 {
-    auto [text, nodeIdentifier] = extractedText;
+    auto [text, nodeIdentifierBinding] = extractedText;
+    auto& nodeIdentifier = nodeIdentifierBinding;
 
     RefPtr node = resolveNodeWithBodyAsFallback(frame, nodeIdentifier);
     if (text.isEmpty())

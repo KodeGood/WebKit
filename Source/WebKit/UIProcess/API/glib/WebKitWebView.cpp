@@ -2803,7 +2803,8 @@ void webkitWebViewGetLoadDecisionForIcons(WebKitWebView* webView, const HashMap<
 
     const auto isEphemeral = webkitWebViewIsEphemeral(webView);
     const auto& activeURL = getPage(webView).pageLoadState().activeURL().string();
-    for (const auto& [identifier, icon] : icons) {
+    for (const auto& [identifierBinding, icon] : icons) {
+        auto& identifier = identifierBinding;
         // FIXME: Maybe we should consider other icon types as loadable.
         if (!icon.url.protocolIsInHTTPFamily() || icon.type != LinkIconType::Favicon)
             continue;
