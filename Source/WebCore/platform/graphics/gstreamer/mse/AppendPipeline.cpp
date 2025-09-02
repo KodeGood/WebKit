@@ -208,7 +208,7 @@ AppendPipeline::AppendPipeline(SourceBufferPrivateGStreamer& sourceBufferPrivate
     if (type.endsWith("mp4"_s) || type.endsWith("aac"_s)) {
         m_demux = makeGStreamerElement("qtdemux"_s);
         m_typefind = makeGStreamerElement("identity"_s);
-        GRefPtr<GstCaps> caps = adoptGRef(gst_caps_new_simple("video/quicktime", "variant", G_TYPE_STRING, "mse-bytestream", NULL));
+        GRefPtr<GstCaps> caps = adoptGRef(gst_caps_new_simple("video/quicktime", "variant", G_TYPE_STRING, "mse-bytestream", nullptr));
         gst_app_src_set_caps(GST_APP_SRC(m_appsrc.get()), caps.get());
     } else if (type.endsWith("webm"_s)) {
         m_demux = makeGStreamerElement("matroskademux"_s);
