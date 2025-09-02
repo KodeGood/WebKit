@@ -418,7 +418,9 @@ Awaitable<bool> WebFullScreenManagerProxy::beganEnterFullScreen(FrameIdentifier 
     auto rectsInScreenCoordinates = convertFromRootViewToScreenCoordinates({ initialFrameInRootViewCoordinates, finalFrameInRootViewCoordinates });
     if (!rectsInScreenCoordinates)
         co_return false;
-    auto [initialFrameInScreenCoordinates, finalFrameInScreenCoordinates] = *rectsInScreenCoordinates;
+    auto [initialFrameInScreenCoordinatesBinding, finalFrameInScreenCoordinatesBinding] = *rectsInScreenCoordinates;
+    auto& initialFrameInScreenCoordinates = initialFrameInScreenCoordinatesBinding;
+    auto& finalFrameInScreenCoordinates = finalFrameInScreenCoordinatesBinding;
 
     co_await page->nextPresentationUpdate();
 
@@ -443,7 +445,9 @@ Awaitable<void> WebFullScreenManagerProxy::beganExitFullScreen(FrameIdentifier f
     auto rectsInScreenCoordinates = convertFromRootViewToScreenCoordinates({ finalFrameInRootViewCoordinates, initialFrameInRootViewCoordinates });
     if (!rectsInScreenCoordinates)
         co_return;
-    auto [finalFrameInScreenCoordinates, initialFrameInScreenCoordinates] = *rectsInScreenCoordinates;
+    auto [finalFrameInScreenCoordinatesBinding, initialFrameInScreenCoordinatesBinding] = *rectsInScreenCoordinates;
+    auto& finalFrameInScreenCoordinates = finalFrameInScreenCoordinatesBinding;
+    auto& initialFrameInScreenCoordinates = initialFrameInScreenCoordinatesBinding;
 
     {
         CheckedPtr client = m_client;

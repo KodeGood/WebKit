@@ -452,7 +452,8 @@ void ProxyingPageAgent::getResourceContent(const Protocol::Network::FrameId& fra
         callback->sendFailure("Invalid frameId format"_s);
         return;
     }
-    auto [frameProcessIdentifier, frameID] = *parsed;
+    auto [frameProcessIdentifierBinding, frameID] = *parsed;
+    auto& frameProcessIdentifier = frameProcessIdentifierBinding;
 
     Ref inspectedPage = m_inspectedPage.get();
 
@@ -532,7 +533,8 @@ void ProxyingPageAgent::searchInResource(const Protocol::Network::FrameId& frame
             callback->sendFailure("Invalid requestId format"_s);
             return;
         }
-        auto [processIdentifier, resourceID] = *parsed;
+        auto [processIdentifierBinding, resourceID] = *parsed;
+        auto& processIdentifier = processIdentifierBinding;
 
         RefPtr<WebKit::WebProcessProxy> targetProcess;
         std::optional<PageIdentifier> targetPageID;
@@ -563,7 +565,8 @@ void ProxyingPageAgent::searchInResource(const Protocol::Network::FrameId& frame
         callback->sendFailure("Invalid frameId format"_s);
         return;
     }
-    auto [frameProcessIdentifier, frameID] = *parsedFrame;
+    auto [frameProcessIdentifierBinding, frameID] = *parsedFrame;
+    auto& frameProcessIdentifier = frameProcessIdentifierBinding;
 
     RefPtr<WebKit::WebProcessProxy> targetProcess;
     std::optional<PageIdentifier> targetPageID;

@@ -249,7 +249,9 @@ RefPtr<MutableStyleProperties> SubstitutionResolver::resolveAndRegisterDashedFun
 
     // "Let argument rule be an initially empty style rule" with first-valid(arg value, default value) for each parameter.
     auto argumentRule = MutableStyleProperties::create();
-    for (auto [i, parameter] : indexedRange(parameters)) {
+    for (auto [iBinding, parameterBinding] : indexedRange(parameters)) {
+        auto& i = iBinding;
+        auto& parameter = parameterBinding;
         bool hasArgument = i < arguments.size() && !arguments[i].isEmpty();
 
         // first-valid(arg value, default value). A parameter with neither is omitted from the rule,
@@ -352,7 +354,9 @@ bool SubstitutionResolver::substituteDashedFunction(StringView functionName, CSS
     if (!resolved)
         return false;
 
-    auto& [customFunction, foundScopeOrdinal] = *resolved;
+    auto& [customFunctionBinding, foundScopeOrdinalBinding] = *resolved;
+    auto& customFunction = customFunctionBinding;
+    auto& foundScopeOrdinal = foundScopeOrdinalBinding;
 
     auto guard = m_styleBuilder.state().guardSubstitutionContext({ SubstitutionContext::Type::Function, scopedFunctionName.name, foundScopeOrdinal });
 

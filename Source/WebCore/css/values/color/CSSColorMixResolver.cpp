@@ -144,7 +144,8 @@ WebCore::Color mix(const ColorMixResolver& colorMix)
 
     // 1. Normalize mix percentages from the list of mix items passed to the function, with the "forced normalization" flag set to true, letting items and leftover be the result.
 
-    auto [items, leftover] = normalizedMixPercentages(colorMix.components);
+    auto [itemsBinding, leftover] = normalizedMixPercentages(colorMix.components);
+    auto& items = itemsBinding;
 
     // 2. Let alpha mult be 1 - leftover, interpreting leftover as a number between 0 and 1.
     // NOTE: Not calculated until it is used below.

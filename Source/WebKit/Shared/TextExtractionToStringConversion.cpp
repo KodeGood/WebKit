@@ -608,7 +608,9 @@ public:
         std::optional<TextExtractionLine> previousLine;
         String previousText;
         StringBuilder buffer;
-        for (auto&& [text, line] : WTF::move(m_lines)) {
+        for (auto&& [textBinding, lineBinding] : WTF::move(m_lines)) {
+            auto& text = textBinding;
+            auto& line = lineBinding;
             auto separator = [&] -> std::optional<String> {
                 if (!previousLine)
                     return std::nullopt;

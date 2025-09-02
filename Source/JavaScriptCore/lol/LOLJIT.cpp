@@ -3449,8 +3449,11 @@ void LOLJIT::emit_op_put_to_scope(const JSInstruction* currentInstruction)
 {
     auto bytecode = currentInstruction->as<OpPutToScope>();
     auto allocations = m_fastAllocator.allocate(*this, bytecode, m_bytecodeIndex);
-    auto [ scopeRegs, valueRegs ] = allocations.uses;
-    auto [ metadataRegs ] = allocations.scratches;
+    auto [scopeRegsBinding, valueRegsBinding] = allocations.uses;
+    auto& scopeRegs = scopeRegsBinding;
+    auto& valueRegs = valueRegsBinding;
+    auto [metadataRegsBinding] = allocations.scratches;
+    auto& metadataRegs = metadataRegsBinding;
 
     ResolveType profiledResolveType = bytecode.metadata(m_profiledCodeBlock).m_getPutInfo.resolveType();
 

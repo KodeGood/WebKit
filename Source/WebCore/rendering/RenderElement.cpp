@@ -1628,7 +1628,10 @@ bool RenderElement::repaintAfterLayoutIfNeeded(SingleThreadWeakPtr<const RenderL
     auto insetShadowExtent = Style::shadowInsetExtent(style->boxShadow(), zoom);
     auto sizeDelta = LayoutSize { absoluteValue(newOutlineBoundsRect.width() - oldOutlineBoundsRect.width()), absoluteValue(newOutlineBoundsRect.height() - oldOutlineBoundsRect.height()) };
     if (sizeDelta.width()) {
-        auto [shadowLeft, shadowRight] = Style::shadowHorizontalExtent(style->boxShadow(), zoom);
+        auto shadowHorizontal = Style::shadowHorizontalExtent(style->boxShadow(), zoom);
+        // Avoid structured bindings: some Clang configs reject referencing them in nested scopes.
+        auto shadowLeft  = std::get<0>(shadowHorizontal);
+        auto shadowRight = std::get<1>(shadowHorizontal);
 
         auto insetExtent = [&] {
             // Inset "content" is inside the border box (e.g. border, negative outline and box shadow).
@@ -1672,7 +1675,9 @@ bool RenderElement::repaintAfterLayoutIfNeeded(SingleThreadWeakPtr<const RenderL
         }
     }
     if (sizeDelta.height()) {
-        auto [shadowTop, shadowBottom] = Style::shadowVerticalExtent(style->boxShadow(), zoom);
+        auto shadowVertical = Style::shadowVerticalExtent(style->boxShadow(), zoom);
+        auto shadowTop    = std::get<0>(shadowVertical);
+        auto shadowBottom = std::get<1>(shadowVertical);
 
         auto insetExtent = [&] {
             // Inset "content" is inside the border box (e.g. border, negative outline and box shadow).

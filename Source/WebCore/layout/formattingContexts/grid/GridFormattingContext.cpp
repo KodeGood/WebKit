@@ -197,7 +197,9 @@ UsedTrackSizes GridFormattingContext::layout(GridLayoutConstraints layoutConstra
 
     GridLayoutState layoutState { layoutConstraints, gridDefinition, usedJustifyContent, usedAlignContent, usedGapValue(gridStyle->columnGap(), gridStyle), usedGapValue(gridStyle->rowGap(), gridStyle) };
 
-    auto [ usedTrackSizes, gridItemRects ] = GridLayout { *this }.layout(unplacedGridItems, layoutState);
+    auto [usedTrackSizesBinding, gridItemRectsBinding] = GridLayout { *this }.layout(unplacedGridItems, layoutState);
+    auto& usedTrackSizes = usedTrackSizesBinding;
+    auto& gridItemRects = gridItemRectsBinding;
 
     // Grid layout positions each item within its containing block which is the grid area.
     // Here we translate it to the coordinate space of the grid.

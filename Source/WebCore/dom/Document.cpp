@@ -6040,7 +6040,9 @@ void Document::runScrollSteps()
     if (m_pendingScrollEventTargetList && !m_pendingScrollEventTargetList->targets.isEmpty()) {
         LOG_WITH_STREAM(Events, stream << "Document " << this << " sending scroll events to pending scroll event targets");
         auto currentTargets = WTF::move(m_pendingScrollEventTargetList->targets);
-        for (auto& [target, type] : currentTargets) {
+        for (auto& [targetBinding, typeBinding] : currentTargets) {
+            auto& target = targetBinding;
+            auto& type = typeBinding;
             auto bubbles = target->isDocumentNode() ? Event::CanBubble::Yes : Event::CanBubble::No;
             auto eventName = [&] {
                 switch (type) {

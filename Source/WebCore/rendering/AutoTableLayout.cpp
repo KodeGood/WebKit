@@ -110,7 +110,9 @@ void AutoTableLayout::recalcColumn(unsigned effCol)
                     // Our limit is based on KHTML's representation that used 16 bits widths.
                     // FIXME: Other browsers have a lower limit for the cell's max width. 
                     const float cCellMaxWidth = 32760;
-                    auto [ cellLogicalWidth, cellUsedZoom ] = cell->styleOrColLogicalWidth();
+                    auto [cellLogicalWidthBinding, cellUsedZoomBinding] = cell->styleOrColLogicalWidth();
+                    auto& cellLogicalWidth = cellLogicalWidthBinding;
+                    auto& cellUsedZoom = cellUsedZoomBinding;
                     if (auto fixedCellLogicalWidth = cellLogicalWidth.tryFixed()) {
                         if (fixedCellLogicalWidth->resolveZoom(cellUsedZoom) > cCellMaxWidth)
                             cellLogicalWidth = Style::PreferredSize::Fixed { cCellMaxWidth };

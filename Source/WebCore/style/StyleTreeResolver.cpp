@@ -1559,7 +1559,8 @@ std::unique_ptr<Update> TreeResolver::resolve()
 
     if (!m_changedAnchorNames.isEmpty() || m_allAnchorNamesInvalid) {
         // If there are changes to the anchor names then loop through the existing anchors and see if any of them references those names.
-        for (auto [weakAnchorPositioned, anchors] : m_document->styleScope().anchorPositionedToAnchorMap()) {
+        for (auto [weakAnchorPositioned, anchorsBinding] : m_document->styleScope().anchorPositionedToAnchorMap()) {
+            auto& anchors = anchorsBinding;
             auto anchorPositioned = weakAnchorPositioned.styleable();
             if (!anchorPositioned)
                 continue;

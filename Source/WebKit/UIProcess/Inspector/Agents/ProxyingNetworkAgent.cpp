@@ -329,7 +329,8 @@ void ProxyingNetworkAgent::getResponseBody(const Protocol::Network::RequestId& r
         return;
     }
 
-    auto [processIdentifier, resourceID] = *parsed;
+    auto [processIdentifierBinding, resourceID] = *parsed;
+    auto& processIdentifier = processIdentifierBinding;
 
     RefPtr inspectedPage = m_inspectedPage.get();
     if (!inspectedPage) {
