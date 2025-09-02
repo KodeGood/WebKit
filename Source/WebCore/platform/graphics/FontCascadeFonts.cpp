@@ -611,7 +611,7 @@ TextShapingResultAndDisplayList* FontCascadeFonts::getOrCreateCachedShapedText(c
         : fontCascade.layoutSimpleText(run, 0, run.length(), ForTextEmphasis::No);
     result.glyphBuffer.flatten();
 
-    *cacheEntry = WTF::makeUnique<TextShapingResultAndDisplayList>(WTF::move(result));
+    *cacheEntry = WTF::makeUnique<TextShapingResultAndDisplayList>(TextShapingResultAndDisplayList { WTF::move(result) });
 
     return cacheEntry->get();
 }
