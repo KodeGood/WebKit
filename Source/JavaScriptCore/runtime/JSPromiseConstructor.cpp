@@ -155,7 +155,9 @@ static JSObject* promiseRaceSlow(JSGlobalObject* globalObject, CallFrame* callFr
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
 
-    auto [promise, resolve, reject] = JSPromise::newPromiseCapability(globalObject, thisValue);
+    auto [promise, resolveBinding, rejectBinding] = JSPromise::newPromiseCapability(globalObject, thisValue);
+    auto& resolve = resolveBinding;
+    auto& reject = rejectBinding;
     RETURN_IF_EXCEPTION(scope, { });
 
     auto callReject = [&](JSValue exception) -> void {
@@ -304,7 +306,9 @@ static JSObject* promiseAllSlow(JSGlobalObject* globalObject, CallFrame* callFra
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
 
-    auto [promise, resolve, reject] = JSPromise::newPromiseCapability(globalObject, thisValue);
+    auto [promise, resolveBinding, rejectBinding] = JSPromise::newPromiseCapability(globalObject, thisValue);
+    auto& resolve = resolveBinding;
+    auto& reject = rejectBinding;
     RETURN_IF_EXCEPTION(scope, { });
 
     auto callReject = [&](JSValue exception) -> void {
@@ -625,7 +629,8 @@ static JSObject* promiseAllSettledSlow(JSGlobalObject* globalObject, CallFrame* 
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
 
-    auto [promise, resolve, reject] = JSPromise::newPromiseCapability(globalObject, thisValue);
+    auto [promise, resolve, rejectBinding] = JSPromise::newPromiseCapability(globalObject, thisValue);
+    auto& reject = rejectBinding;
     RETURN_IF_EXCEPTION(scope, { });
 
     auto callReject = [&](JSValue exception) -> void {
@@ -1108,7 +1113,9 @@ static JSObject* promiseAnySlow(JSGlobalObject* globalObject, CallFrame* callFra
     VM& vm = globalObject->vm();
     auto scope = DECLARE_THROW_SCOPE(vm);
 
-    auto [promise, resolve, reject] = JSPromise::newPromiseCapability(globalObject, thisValue);
+    auto [promise, resolveBinding, rejectBinding] = JSPromise::newPromiseCapability(globalObject, thisValue);
+    auto& resolve = resolveBinding;
+    auto& reject = rejectBinding;
     RETURN_IF_EXCEPTION(scope, { });
 
     auto callReject = [&](JSValue exception) -> void {
