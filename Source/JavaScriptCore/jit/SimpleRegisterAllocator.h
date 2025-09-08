@@ -46,16 +46,16 @@ class SimpleRegisterAllocator {
     WTF_MAKE_NONCOPYABLE(SimpleRegisterAllocator);
     WTF_FORBID_HEAP_ALLOCATION;
 public:
-    using Register = RegisterBank::Register;
+    using Register = typename RegisterBank::Register;
     static_assert(std::is_same_v<Register, GPRReg> || std::is_same_v<Register, FPRReg>);
-    using JITBackend = RegisterBank::JITBackend;
+    using JITBackend = typename RegisterBank::JITBackend;
     static constexpr Register invalidRegister = RegisterBank::invalidRegister;
     // Usually used by JITBackends to track where:
     //    1) The type of binding it is (e.g. scratch vs value)
     //    2) Where this value should be flushed to when spilled.
-    using RegisterBinding = JITBackend::RegisterBinding;
+    using RegisterBinding = typename JITBackend::RegisterBinding;
     using RegisterBindings = std::array<RegisterBinding, RegisterBank::numberOfRegisters>;
-    using SpillHint = JITBackend::SpillHint;
+    using SpillHint = typename JITBackend::SpillHint;
     static_assert(std::unsigned_integral<SpillHint>);
     static constexpr SpillHint invalidRegisterHint = std::numeric_limits<SpillHint>::max();
 

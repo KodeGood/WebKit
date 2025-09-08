@@ -35,13 +35,13 @@ template<auto R> struct ToPlatform<LengthPercentage<R>> {
     auto operator()(const LengthPercentage<R>& length) -> WebCore::Length
     {
         return WTF::switchOn(length,
-            [](const LengthPercentage<R>::Dimension& dimension) {
+            [](const typename LengthPercentage<R>::Dimension& dimension) {
                 return WebCore::Length { dimension.value, WebCore::LengthType::Fixed };
             },
-            [](const LengthPercentage<R>::Percentage& percentage) {
+            [](const typename LengthPercentage<R>::Percentage& percentage) {
                 return WebCore::Length { percentage.value, WebCore::LengthType::Percent };
             },
-            [](const LengthPercentage<R>::Calc& calc) {
+            [](const typename LengthPercentage<R>::Calc& calc) {
                 return WebCore::Length { calc.protectedCalculation() };
             }
         );

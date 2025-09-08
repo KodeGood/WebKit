@@ -1100,15 +1100,15 @@ template<typename SizeType> LayoutUnit RenderFlexibleBox::computeMainSizeFromAsp
     // `crossSize` is border-box size if box-sizing is border-box, and content-box otherwise.
 
     auto crossSizeOptional = WTF::switchOn(crossSizeLength,
-        [&](const SizeType::Fixed& fixedCrossSizeLength) -> std::optional<LayoutUnit> {
+        [&](const typename SizeType::Fixed& fixedCrossSizeLength) -> std::optional<LayoutUnit> {
             return LayoutUnit(fixedCrossSizeLength.value);
         },
-        [&](const SizeType::Percentage& percentageCrossSizeLength) -> std::optional<LayoutUnit> {
+        [&](const typename SizeType::Percentage& percentageCrossSizeLength) -> std::optional<LayoutUnit> {
             return mainAxisIsFlexItemInlineAxis(flexItem)
                 ? flexItem.computePercentageLogicalHeight(percentageCrossSizeLength)
                 : adjustBorderBoxLogicalWidthForBoxSizing(Style::evaluate(percentageCrossSizeLength, contentBoxWidth()));
         },
-        [&](const SizeType::Calc& calcCrossSizeLength) -> std::optional<LayoutUnit> {
+        [&](const typename SizeType::Calc& calcCrossSizeLength) -> std::optional<LayoutUnit> {
             return mainAxisIsFlexItemInlineAxis(flexItem)
                 ? flexItem.computePercentageLogicalHeight(calcCrossSizeLength)
                 : adjustBorderBoxLogicalWidthForBoxSizing(Style::evaluate(calcCrossSizeLength, contentBoxWidth()));
