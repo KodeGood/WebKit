@@ -52,7 +52,7 @@ public:
             return std::bit_ceil((static_cast<size_t>(E::HighestEnumValue) >> 3) + 1);
         return 8;
     }
-    using StorageType = SizedUnsignedTrait<storageSize()>::Type;
+    using StorageType = typename SizedUnsignedTrait<storageSize()>::Type;
 
     template<typename StorageType> class Iterator {
     public:
