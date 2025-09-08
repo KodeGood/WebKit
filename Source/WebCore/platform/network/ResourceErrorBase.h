@@ -26,7 +26,29 @@
 
 #pragma once
 
-#include <source_location>
+// Prefer C++20 <source_location> when available; otherwise provide a tiny polyfill.
+#if defined(__has_include)
+#  if __has_include(<source_location>)
+#    include <source_location>
+#    define WEBKIT_HAS_STD_SOURCE_LOCATION 1
+#  endif
+#endif
+
+#ifndef WEBKIT_HAS_STD_SOURCE_LOCATION
+namespace std {
+struct source_location {
+    // Minimal API used in WebKit; extend if needed.
+    constexpr source_location() = default;
+    static constexpr source_location current() noexcept { return {}; }
+    constexpr const char* file_name() const noexcept { return __builtin_FILE(); }
+    constexpr const char* function_name() const noexcept { return __builtin_FUNCTION(); }
+    constexpr unsigned line() const noexcept { return __builtin_LINE(); }
+    constexpr unsigned column() const noexcept { return 0; }
+};
+} // namespace std
+#endif
+
+
 #include <wtf/TZoneMalloc.h>
 #include <wtf/URL.h>
 #include <wtf/text/WTFString.h>
