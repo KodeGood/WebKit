@@ -1160,18 +1160,18 @@ template<typename SizeType> LayoutUnit FlexFormattingContext::computeMainSizeFro
 
     // All paths return border-box cross size.
     auto crossSizeOptional = WTF::switchOn(crossSizeLength,
-        [&](const SizeType::Fixed& fixedCrossSizeLength) -> std::optional<LayoutUnit> {
+        [&](const typename SizeType::Fixed& fixedCrossSizeLength) -> std::optional<LayoutUnit> {
             auto value = LayoutUnit { fixedCrossSizeLength.resolveZoom(flexItem.style().usedZoomForLength()) };
             if (flexItem.style().boxSizing() == BoxSizing::ContentBox)
                 value += flexItemCrossAxisBorderAndPadding;
             return value;
         },
-        [&](const SizeType::Percentage& percentageCrossSizeLength) -> std::optional<LayoutUnit> {
+        [&](const typename SizeType::Percentage& percentageCrossSizeLength) -> std::optional<LayoutUnit> {
             return flexLayoutItem.mainAxisIsInlineAxis
                 ? flexItem.computePercentageLogicalHeight(SizeType { percentageCrossSizeLength })
                 : m_flexBox.adjustBorderBoxLogicalWidthForBoxSizing(Style::evaluate<LayoutUnit>(percentageCrossSizeLength, m_constraints.crossAxisSizeForLengthResolution));
         },
-        [&](const SizeType::Calc& calcCrossSizeLength) -> std::optional<LayoutUnit> {
+        [&](const typename SizeType::Calc& calcCrossSizeLength) -> std::optional<LayoutUnit> {
             return flexLayoutItem.mainAxisIsInlineAxis
                 ? flexItem.computePercentageLogicalHeight(calcCrossSizeLength)
                 : m_flexBox.adjustBorderBoxLogicalWidthForBoxSizing(Style::evaluate<LayoutUnit>(calcCrossSizeLength, m_constraints.crossAxisSizeForLengthResolution, flexItem.style().usedZoomForLength()));

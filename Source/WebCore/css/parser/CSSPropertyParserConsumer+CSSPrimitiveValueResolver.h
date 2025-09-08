@@ -67,10 +67,10 @@ struct CSSPrimitiveValueResolverBase {
             },
             [&](const CSS::Percentage<pR, T>& value) -> RefPtr<CSSPrimitiveValue> {
                 return WTF::switchOn(value,
-                    [&](const CSS::Percentage<pR, T>::Raw& raw) -> RefPtr<CSSPrimitiveValue> {
+                    [&](const typename CSS::Percentage<pR, T>::Raw& raw) -> RefPtr<CSSPrimitiveValue> {
                         return CSSPrimitiveValue::create(raw.value / 100.0, CSSUnitType::CSS_NUMBER);
                     },
-                    [&](const CSS::Percentage<pR, T>::Calc& calc) -> RefPtr<CSSPrimitiveValue> {
+                    [&](const typename CSS::Percentage<pR, T>::Calc& calc) -> RefPtr<CSSPrimitiveValue> {
                         return resolve(calc, options);
                     }
                 );
