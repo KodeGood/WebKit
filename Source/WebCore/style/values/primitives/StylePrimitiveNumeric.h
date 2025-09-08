@@ -84,7 +84,7 @@ private:
     //  - any floating point value (using NaN).
     //  - any numeric value where the minimum allowed value is greater than 0 (using 0).
     //  - any numeric value where the minimum allowed value is equal to 0 and the minimum representable value is not zero (using -1).
-    static consteval ResolvedValueType emptyValue()
+    static constexpr ResolvedValueType emptyValue()
     {
         if constexpr (std::floating_point<ResolvedValueType>)
             return std::numeric_limits<ResolvedValueType>::quiet_NaN();
