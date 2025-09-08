@@ -82,7 +82,7 @@ public:
 
     // For CollectionIndexCache
     using Traversal = CollectionTraversal<traversalType>;
-    using Iterator = Traversal::Iterator;
+    using Iterator = typename Traversal::Iterator;
     inline Iterator collectionBegin() const;
     inline Iterator collectionLast() const;
     inline void collectionTraverseForward(Iterator& current, unsigned count, unsigned& traversedCount) const;
