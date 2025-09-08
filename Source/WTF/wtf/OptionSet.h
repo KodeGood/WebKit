@@ -254,7 +254,7 @@ struct ConstexprOptionSet {
 
     ALWAYS_INLINE constexpr OptionSet<E> operator*() const { return OptionSet<E>::fromRaw(storage); }
 
-    const OptionSet<E>::StorageType storage;
+    const typename OptionSet<E>::StorageType storage;
 };
 
 } // namespace WTF

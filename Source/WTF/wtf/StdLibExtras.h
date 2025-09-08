@@ -1565,7 +1565,7 @@ struct SizedUnsignedTrait<8> {
     using Type = uint64_t;
 };
 template<typename T>
-using SameSizeUnsignedInteger = SizedUnsignedTrait<sizeof(T)>::Type;
+using SameSizeUnsignedInteger = typename SizedUnsignedTrait<sizeof(T)>::Type;
 
 namespace Views {
 
