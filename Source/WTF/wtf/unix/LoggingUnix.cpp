@@ -21,7 +21,7 @@
 
 #include "config.h"
 
-#if !OS(ANDROID)
+#if !OS(ANDROID) && !OS(OHOS)
 
 #include "Logging.h"
 
@@ -53,4 +53,4 @@ String logLevelString()
 
 #endif // !LOG_DISABLED || !RELEASE_LOG_DISABLED
 
-#endif // !OS(ANDROID)
+#endif // !OS(ANDROID) && !OS(OHOS)
