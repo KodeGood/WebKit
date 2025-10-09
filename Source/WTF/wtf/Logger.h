@@ -40,6 +40,10 @@
 #include <android/log.h>
 #endif
 
+#if OS(OHOS)
+#include <hilog/log.h>
+#endif
+
 namespace WTF {
 
 template<typename T>
@@ -277,7 +281,7 @@ public:
         if (!m_enabled)
             return false;
 
-#if ENABLE(JOURNALD_LOG) || OS(ANDROID)
+#if ENABLE(JOURNALD_LOG) || OS(ANDROID) || OS(OHOS)
         if (channel.state == WTFLogChannelState::Off)
             return false;
 #endif
@@ -382,6 +386,8 @@ private:
         osLog(channel, logMessage.utf8());
 #elif OS(ANDROID)
         __android_log_print(ANDROID_LOG_VERBOSE, LOG_CHANNEL_WEBKIT_SUBSYSTEM, "[%s] %s", channel.name, logMessage.utf8().data());
+#elif OS(OHOS)
+        OH_LOG_Print(LOG_APP, LOG_INFO, WEBKIT_LOG_DOMAIN, LOG_CHANNEL_WEBKIT_SUBSYSTEM, "[%s] %s", channel.name, logMessage.utf8().data());
 #elif ENABLE(JOURNALD_LOG)
         if (WTFShouldLogToJournal())
             sd_journal_send("WEBKIT_SUBSYSTEM=" LOG_CHANNEL_WEBKIT_SUBSYSTEM, "WEBKIT_CHANNEL=%s", channel.name, "MESSAGE=%s", logMessage.utf8().data(), nullptr);
@@ -427,6 +433,8 @@ private:
         UNUSED_PARAM(function);
 #elif OS(ANDROID)
         __android_log_print(ANDROID_LOG_VERBOSE, LOG_CHANNEL_WEBKIT_SUBSYSTEM, "[%s] %s FILE=%s:%d: %s", channel.name, logMessage.utf8().data(), file, line, function);
+#elif OS(OHOS)
+        OH_LOG_Print(LOG_APP, LOG_INFO, WEBKIT_LOG_DOMAIN, LOG_CHANNEL_WEBKIT_SUBSYSTEM, "[%s] %s FILE=%s:%d: %s", channel.name, logMessage.utf8().data(), file, line, function);
 #elif ENABLE(JOURNALD_LOG)
         if (WTFShouldLogToJournal()) {
             auto fileString = makeString("CODE_FILE="_s, unsafeSpan(file));

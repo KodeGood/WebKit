@@ -3661,7 +3661,7 @@ int main(int argc, char** argv)
     // yet, since that would do somethings that we'd like to defer until after we
     // have a chance to parse options.
     WTF::initialize();
-#if PLATFORM(COCOA) || OS(ANDROID)
+#if PLATFORM(COCOA) || OS(ANDROID) || OS(OHOS)
     WTF::disableForwardingVPrintfStdErrToOSLog();
 #endif
 

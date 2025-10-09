@@ -56,6 +56,10 @@
 #include <wtf/spi/darwin/ReasonSPI.h>
 #endif
 
+#if OS(OHOS)
+#include <hilog/log.h>
+#endif
+
 #if USE(OS_LOG)
 #include <os/log.h>
 #endif
@@ -103,11 +107,11 @@
 #if ENABLE(RELEASE_LOG)
 #define RELEASE_LOG_DISABLED 0
 #else
-#define RELEASE_LOG_DISABLED !(USE(OS_LOG) || ENABLE(JOURNALD_LOG) || OS(ANDROID))
+#define RELEASE_LOG_DISABLED !(USE(OS_LOG) || ENABLE(JOURNALD_LOG) || OS(ANDROID) || OS(OHOS))
 #endif
 
 #ifndef VERBOSE_RELEASE_LOG
-#define VERBOSE_RELEASE_LOG (ENABLE(JOURNALD_LOG) || OS(ANDROID))
+#define VERBOSE_RELEASE_LOG (ENABLE(JOURNALD_LOG) || OS(ANDROID) || OS(OHOS))
 #endif
 
 #define WTF_PRETTY_FUNCTION __PRETTY_FUNCTION__
@@ -704,6 +708,10 @@ static constexpr bool unreachableForValue = false;
 #define PUBLIC_LOG    "{public}"
 #define PRIVATE_LOG   "{private}"
 #define SENSITIVE_LOG "{sensitive}"
+#elif OS(OHOS)
+#define PUBLIC_LOG    "{public}"
+#define PRIVATE_LOG   "{private}"
+#define SENSITIVE_LOG "{private}"
 #else
 #define PUBLIC_LOG    ""
 #define PRIVATE_LOG   ""
@@ -782,6 +790,33 @@ WTF_ALLOW_UNSAFE_BUFFER_USAGE_END \
 #define RELEASE_LOG_WITH_LEVEL_IF(isAllowed, channel, logLevel, ...) do { \
     if ((isAllowed) && LOG_CHANNEL(channel).level >= (logLevel)) \
         LOG_ANDROID_SEND(channel, VERBOSE, __VA_ARGS__); \
+} while (0)
+
+#elif OS(OHOS)
+
+#define WEBKIT_LOG_DOMAIN 0xD9C7
+
+#define LOG_OHOS_SEND(channel, priority, fmt, ...) do { \
+    auto& logChannel = LOG_CHANNEL(channel); \
+    if (logChannel.state != WTFLogChannelState::Off) \
+        OH_LOG_Print(LOG_APP, LOG_ ## priority, WEBKIT_LOG_DOMAIN, LOG_CHANNEL_WEBKIT_SUBSYSTEM, "[%s] " fmt, logChannel.name, ##__VA_ARGS__); \
+} while (0)
+
+#define RELEASE_LOG(channel, ...) LOG_OHOS_SEND(channel, INFO, __VA_ARGS__)
+#define RELEASE_LOG_ERROR(channel, ...) LOG_OHOS_SEND(channel, ERROR, __VA_ARGS__)
+#define RELEASE_LOG_FAULT(channel, ...) LOG_OHOS_SEND(channel, FATAL, __VA_ARGS__)
+#define RELEASE_LOG_FAULT_WITH_PAYLOAD(channel, format, ...) RELEASE_LOG_FAULT(channel, format __VA_OPT__(, SAFE_PRINTF_TYPE(__VA_ARGS__)))
+#define RELEASE_LOG_INFO(channel, ...) LOG_OHOS_SEND(channel, INFO, __VA_ARGS__)
+#define RELEASE_LOG_DEBUG(channel, ...) LOG_OHOS_SEND(channel, DEBUG, __VA_ARGS__)
+
+#define RELEASE_LOG_WITH_LEVEL(channel, logLevel, ...) do { \
+    if (LOG_CHANNEL(channel).level >= (logLevel)) \
+        LOG_OHOS_SEND(channel, DEBUG, __VA_ARGS__); \
+} while (0)
+
+#define RELEASE_LOG_WITH_LEVEL_IF(isAllowed, channel, logLevel, ...) do { \
+    if ((isAllowed) && LOG_CHANNEL(channel).level >= (logLevel)) \
+        LOG_OHOS_SEND(channel, DEBUG, __VA_ARGS__); \
 } while (0)
 
 #elif ENABLE(JOURNALD_LOG)
@@ -1069,7 +1104,7 @@ void isIntegralOrPointerType(T, Types... types)
     isIntegralOrPointerType(types...);
 }
 
-#if PLATFORM(COCOA) || OS(ANDROID)
+#if PLATFORM(COCOA) || OS(ANDROID) || OS(OHOS)
 WTF_EXPORT_PRIVATE void NODELETE disableForwardingVPrintfStdErrToOSLog();
 #endif
 
