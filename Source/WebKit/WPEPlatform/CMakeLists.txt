@@ -15,6 +15,7 @@ set(WPEPlatform_SOURCES
     ${WEBKIT_DIR}/WPEPlatform/wpe/WPEBufferAndroid.cpp
     ${WEBKIT_DIR}/WPEPlatform/wpe/WPEBufferDMABuf.cpp
     ${WEBKIT_DIR}/WPEPlatform/wpe/WPEBufferDMABufFormats.cpp
+    ${WEBKIT_DIR}/WPEPlatform/wpe/WPEBufferOHOS.cpp
     ${WEBKIT_DIR}/WPEPlatform/wpe/WPEBufferSHM.cpp
     ${WEBKIT_DIR}/WPEPlatform/wpe/WPEClipboard.cpp
     ${WEBKIT_DIR}/WPEPlatform/wpe/WPEColor.cpp
@@ -50,6 +51,7 @@ set(WPEPlatform_INSTALLED_HEADERS
     ${WEBKIT_DIR}/WPEPlatform/wpe/WPEBufferAndroid.h
     ${WEBKIT_DIR}/WPEPlatform/wpe/WPEBufferDMABuf.h
     ${WEBKIT_DIR}/WPEPlatform/wpe/WPEBufferDMABufFormats.h
+    ${WEBKIT_DIR}/WPEPlatform/wpe/WPEBufferOHOS.h
     ${WEBKIT_DIR}/WPEPlatform/wpe/WPEBufferSHM.h
     ${WEBKIT_DIR}/WPEPlatform/wpe/WPEClipboard.h
     ${WEBKIT_DIR}/WPEPlatform/wpe/WPEColor.h
@@ -170,6 +172,10 @@ endif ()
 
 if (NOT USE_SYSTEM_MALLOC)
    list(APPEND WPEPlatform_LIBRARIES bmalloc)
+endif ()
+
+if (OHOS)
+    list(APPEND WPEPlatform_LIBRARIES OHOS::NativeBuffer OHOS::NativeWindow)
 endif ()
 
 if (ENABLE_WPE_PLATFORM_DRM)

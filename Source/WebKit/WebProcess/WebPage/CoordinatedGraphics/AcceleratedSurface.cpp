@@ -64,6 +64,13 @@
 #include <wtf/UniStdExtras.h>
 #endif
 
+#if OS(OHOS)
+#include <WebCore/BufferFormatOHOS.h>
+#include <native_buffer/native_buffer.h>
+#include <drm/drm_fourcc.h>
+#include <wtf/ohos/RefPtrOHOS.h>
+#endif
+
 #if USE(GLIB_EVENT_LOOP)
 #include <wtf/glib/RunLoopSourcePriority.h>
 #endif
@@ -100,7 +107,7 @@ AcceleratedSurface::AcceleratedSurface(WebPage& webPage, Function<void()>&& fram
     , m_useExplicitSync(useExplicitSync())
     , m_isOpaque(!webPage.backgroundColor().has_value() || webPage.backgroundColor()->isOpaque())
 {
-#if USE(GBM) && (PLATFORM(GTK) || ENABLE(WPE_PLATFORM))
+#if (PLATFORM(GTK) || ENABLE(WPE_PLATFORM)) && (USE(GBM) || OS(OHOS))
     if (m_swapChain.type() == SwapChain::Type::EGLImage)
         m_swapChain.setupBufferFormat(m_webPage->preferredBufferFormats(), m_isOpaque);
 #endif
@@ -316,7 +323,78 @@ AcceleratedSurface::RenderTargetEGLImage::RenderTargetEGLImage(uint64_t surfaceI
 
     WebProcess::singleton().parentProcessConnection()->send(Messages::AcceleratedBackingStore::DidCreateDMABufBuffer(m_id, size, format, WTFMove(fds), WTFMove(offsets), WTFMove(strides), modifier, usage), surfaceID);
 }
+#endif // USE(GBM)
 
+#if OS(OHOS)
+static uint64_t usageToOHNativeBufferUsage(RendererBufferFormat::Usage usage)
+{
+    switch (usage) {
+    case RendererBufferFormat::Usage::Rendering:
+        return NATIVEBUFFER_USAGE_HW_RENDER;
+    case RendererBufferFormat::Usage::Mapping:
+        return NATIVEBUFFER_USAGE_CPU_READ | NATIVEBUFFER_USAGE_HW_RENDER;
+    case RendererBufferFormat::Usage::Scanout:
+        return NATIVEBUFFER_USAGE_HW_RENDER; // TODO: ???
+    }
+}
+
+std::unique_ptr<AcceleratedSurface::RenderTarget> AcceleratedSurface::RenderTargetEGLImage::create(uint64_t surfaceID, const WebCore::IntSize& size, const BufferFormat& bufferFormat)
+{
+    const auto nativeBufferFormat = toOHNativeBufferFormat(bufferFormat.fourcc);
+    if (!nativeBufferFormat) {
+        LOG_ERROR("Failed to create OH_NativeBuffer of size %dx%d: no valid format found (FourCC=%s)",
+            size.width(), size.height(), FourCC(bufferFormat.fourcc).string().data());
+        return nullptr;
+    }
+
+    OH_NativeBuffer_Config config;
+    config.width = size.width();
+    config.height = size.height();
+    config.format = nativeBufferFormat.value();
+    config.usage = usageToOHNativeBufferUsage(bufferFormat.usage);
+
+    OH_NativeBuffer* nativeBufferPtr = OH_NativeBuffer_Alloc(&config);
+    if (nativeBufferPtr == nullptr) {
+        LOG_ERROR("Failed to create OH_NativeBuffer of size %dx%d, format %s",
+            size.width(), size.height(), FourCC(bufferFormat.fourcc).string().data());
+        return nullptr;
+    }
+
+    RefPtr nativeBuffer = adoptRef(nativeBufferPtr);
+
+    const Vector<EGLAttrib> attributes { EGL_IMAGE_PRESERVED, EGL_TRUE, EGL_NONE };
+
+    auto& display = WebCore::PlatformDisplay::sharedDisplay();
+    auto nativeWindowBufferPtr = OH_NativeWindow_CreateNativeWindowBufferFromNativeBuffer(nativeBufferPtr);
+    auto image = display.createEGLImage(EGL_NO_CONTEXT, EGL_NATIVE_BUFFER_OHOS, nativeWindowBufferPtr, attributes);
+    if (image == EGL_NO_IMAGE) {
+        LOG_ERROR("Failed to bind OH_NativeBuffer to an EGLImage.");
+        return nullptr;
+    }
+    OH_NativeWindow_NativeObjectUnreference(nativeWindowBufferPtr);
+    return makeUnique<RenderTargetEGLImage>(surfaceID, size, image, WTFMove(nativeBuffer));
+}
+
+AcceleratedSurface::RenderTargetEGLImage::RenderTargetEGLImage(uint64_t surfaceID, const WebCore::IntSize& size, EGLImage image, RefPtr<OH_NativeBuffer>&& nativeBuffer)
+    : RenderTargetShareableBuffer(surfaceID, size)
+    , m_image(image)
+{
+    glGenRenderbuffers(1, &m_colorBuffer);
+    glBindRenderbuffer(GL_RENDERBUFFER, m_colorBuffer);
+    glEGLImageTargetRenderbufferStorageOES(GL_RENDERBUFFER, m_image);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, m_colorBuffer);
+
+    WebProcess::singleton().parentProcessConnection()->send(Messages::AcceleratedBackingStore::DidCreateOHOSBuffer(m_id, WTFMove(nativeBuffer)), surfaceID);
+}
+
+void AcceleratedSurface::RenderTargetEGLImage::didRenderFrame(Vector<WebCore::IntRect, 1>&& damageRects)
+{
+    glFlush();
+    RenderTargetShareableBuffer::didRenderFrame(WTFMove(damageRects));
+}
+#endif // OS(OHOS)
+
+#if USE(GBM) || OS(OHOS)
 AcceleratedSurface::RenderTargetEGLImage::~RenderTargetEGLImage()
 {
     if (m_colorBuffer)
@@ -508,6 +586,13 @@ AcceleratedSurface::SwapChain::SwapChain(uint64_t surfaceID)
     auto& display = PlatformDisplay::sharedDisplay();
     switch (display.type()) {
 #if PLATFORM(GTK) || ENABLE(WPE_PLATFORM)
+#if PLATFORM(GTK) || PLATFORM(WPE)
+    case PlatformDisplay::Type::Default:
+#if OS(OHOS)
+        m_type = Type::EGLImage;
+        break;
+#endif
+#endif
     case PlatformDisplay::Type::Surfaceless:
         if (display.eglExtensions().MESA_image_dma_buf_export && WebProcess::singleton().rendererBufferTransportMode().contains(RendererBufferTransportMode::Hardware))
             m_type = Type::Texture;
@@ -533,7 +618,7 @@ AcceleratedSurface::SwapChain::SwapChain(uint64_t surfaceID)
     }
 }
 
-#if USE(GBM) && (PLATFORM(GTK) || ENABLE(WPE_PLATFORM))
+#if (PLATFORM(GTK) || ENABLE(WPE_PLATFORM)) && (USE(GBM) || OS(OHOS))
 void AcceleratedSurface::SwapChain::setupBufferFormat(const Vector<RendererBufferFormat>& preferredFormats, bool isOpaque)
 {
     auto isOpaqueFormat = [](uint32_t fourcc) -> bool {
@@ -566,8 +651,9 @@ void AcceleratedSurface::SwapChain::setupBufferFormat(const Vector<RendererBuffe
                     continue;
 
                 newBufferFormat.usage = bufferFormat.usage;
-                newBufferFormat.drmDevice = bufferFormat.drmDevice;
                 newBufferFormat.fourcc = preferredFormat.fourcc;
+#if USE(GBM)
+                newBufferFormat.drmDevice = bufferFormat.drmDevice;
                 if (preferredFormat.modifiers[0] == DRM_FORMAT_MOD_INVALID)
                     newBufferFormat.modifiers = preferredFormat.modifiers;
                 else {
@@ -577,6 +663,7 @@ void AcceleratedSurface::SwapChain::setupBufferFormat(const Vector<RendererBuffe
                         return std::nullopt;
                     });
                 }
+#endif // USE(GBM)
 
                 if (matchesOpacity)
                     break;
@@ -590,6 +677,7 @@ void AcceleratedSurface::SwapChain::setupBufferFormat(const Vector<RendererBuffe
     if (!newBufferFormat.fourcc || newBufferFormat == m_bufferFormat)
         return;
 
+#if USE(GBM)
     if (!newBufferFormat.drmDevice.isNull()) {
         if (newBufferFormat.drmDevice == m_bufferFormat.drmDevice && newBufferFormat.usage == m_bufferFormat.usage)
             newBufferFormat.gbmDevice = m_bufferFormat.gbmDevice;
@@ -598,6 +686,7 @@ void AcceleratedSurface::SwapChain::setupBufferFormat(const Vector<RendererBuffe
             newBufferFormat.gbmDevice = DRMDeviceManager::singleton().gbmDevice(newBufferFormat.drmDevice, nodeType);
         }
     }
+#endif // USE(GBM)
 
     m_bufferFormat = WTFMove(newBufferFormat);
     m_bufferFormatChanged = true;
@@ -624,7 +713,7 @@ std::unique_ptr<AcceleratedSurface::RenderTarget> AcceleratedSurface::SwapChain:
 {
     switch (m_type) {
 #if PLATFORM(GTK) || ENABLE(WPE_PLATFORM)
-#if USE(GBM)
+#if USE(GBM) || OS(OHOS)
     case Type::EGLImage:
         return RenderTargetEGLImage::create(m_surfaceID, m_size, m_bufferFormat);
 #endif
@@ -651,7 +740,7 @@ AcceleratedSurface::RenderTarget* AcceleratedSurface::SwapChain::nextTarget()
         return m_lockedTargets[0].get();
 #endif
 
-#if USE(GBM) && (PLATFORM(GTK) || ENABLE(WPE_PLATFORM))
+#if (PLATFORM(GTK) || ENABLE(WPE_PLATFORM)) && (USE(GBM) || OS(OHOS))
     if (m_type == Type::EGLImage) {
         Locker locker { m_bufferFormatLock };
         if (m_bufferFormatChanged) {
@@ -732,7 +821,7 @@ void AcceleratedSurface::SwapChain::addDamage(const std::optional<Damage>& damag
 }
 #endif
 
-#if PLATFORM(WPE) && USE(GBM) && ENABLE(WPE_PLATFORM)
+#if PLATFORM(WPE) && ENABLE(WPE_PLATFORM) && (USE(GBM) || OS(OHOS))
 void AcceleratedSurface::preferredBufferFormatsDidChange()
 {
     if (m_swapChain.type() != SwapChain::Type::EGLImage)
@@ -768,7 +857,7 @@ bool AcceleratedSurface::backgroundColorDidChange()
 
     m_isOpaque = isOpaque;
 
-#if USE(GBM) && (PLATFORM(GTK) || ENABLE(WPE_PLATFORM))
+#if (PLATFORM(GTK) || ENABLE(WPE_PLATFORM)) && (USE(GBM) || OS(OHOS))
     if (m_swapChain.type() == SwapChain::Type::EGLImage)
         m_swapChain.setupBufferFormat(m_webPage->preferredBufferFormats(), m_isOpaque);
 #endif
@@ -846,6 +935,12 @@ void AcceleratedSurface::willRenderFrame(const IntSize& size)
         glClearColor(0, 0, 0, 0);
         glClear(GL_COLOR_BUFFER_BIT);
     }
+#if OS(OHOS)
+    else {
+        glClearColor(1.0, 1.0, 1.0, 1.0);
+        glClear(GL_COLOR_BUFFER_BIT);
+    }
+#endif
 }
 
 void AcceleratedSurface::didRenderFrame()

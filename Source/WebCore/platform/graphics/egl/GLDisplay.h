@@ -71,6 +71,11 @@ public:
 #if USE(GSTREAMER)
     const Vector<DMABufFormat>& dmabufFormatsForVideo();
 #endif
+#elif OS(OHOS)
+    struct DMABufFormat {
+        uint32_t fourcc;
+    };
+    const Vector<DMABufFormat>& dmabufFormats();
 #endif
 
 private:

@@ -57,6 +57,11 @@
 #define MSG_NOSIGNAL 0
 #endif
 
+#if OS(OHOS)
+#include <dlfcn.h>
+#include <native_buffer/native_buffer.h>
+#endif
+
 // Although it's available on Darwin, SOCK_SEQPACKET seems to work differently
 // than in traditional Unix so fallback to STREAM on that platform.
 #if defined(SOCK_SEQPACKET) && !OS(DARWIN)
@@ -98,22 +103,26 @@ public:
     void setNull() { m_isNull = true; }
     bool isNull() const { return m_isNull; }
 
-#if OS(ANDROID)
+#if OS(ANDROID) || OS(OHOS)
     enum class Type : uint8_t {
         Unset = 0,
         FileDescriptor,
-        HardwareBuffer,
+#if OS(ANDROID)
+        HardwareBuffer
+#elif OS(OHOS)
+        NativeBuffer
+#endif
     };
 
     Type type() const { return m_type; }
     void setType(Type type) { m_type = type; }
-#endif // OS(ANDROID)
+#endif // OS(ANDROID) || OS(OHOS)
 
 private:
     // The AttachmentInfo will be copied using memcpy, so all members must be trivially copyable.
     bool m_isNull;
 
-#if OS(ANDROID)
+#if OS(ANDROID) || OS(OHOS)
     Type m_type;
 #endif
 };
@@ -144,6 +153,27 @@ void Connection::platformInitialize(Identifier&& identifier)
 #endif
     m_readBuffer.reserveInitialCapacity(messageMaxSize);
     m_fileDescriptors.reserveInitialCapacity(attachmentMaxAmount);
+
+#if OS(OHOS)
+    static PFOH_NativeBuffer_recvHandleFromUnixSocket pOH_NativeBuffer_recvHandleFromUnixSocket = nullptr;
+    static PFOH_NativeBuffer_sendHandleToUnixSocket pOH_NativeBuffer_sendHandleToUnixSocket = nullptr;
+    static bool triedToLoadOHNativeBufferSymbols = false;
+    if (!triedToLoadOHNativeBufferSymbols) {
+        triedToLoadOHNativeBufferSymbols = true;
+        void* handle = dlopen("/system/lib64/ndk/libnative_buffer_socket.z.so", RTLD_NOW);
+        if (handle) {
+            pOH_NativeBuffer_recvHandleFromUnixSocket = reinterpret_cast<PFOH_NativeBuffer_recvHandleFromUnixSocket>(dlsym(handle, "OH_NativeBuffer_recvHandleFromUnixSocket"));
+            pOH_NativeBuffer_sendHandleToUnixSocket = reinterpret_cast<PFOH_NativeBuffer_sendHandleToUnixSocket>(dlsym(handle, "OH_NativeBuffer_sendHandleToUnixSocket"));
+            if (!pOH_NativeBuffer_recvHandleFromUnixSocket || !pOH_NativeBuffer_sendHandleToUnixSocket) {
+                dlclose(handle);
+                pOH_NativeBuffer_recvHandleFromUnixSocket = nullptr;
+                pOH_NativeBuffer_sendHandleToUnixSocket = nullptr;
+            }
+        }
+    }
+    m_OH_NativeBuffer_recvHandleFromUnixSocket = pOH_NativeBuffer_recvHandleFromUnixSocket;
+    m_OH_NativeBuffer_sendHandleToUnixSocket = pOH_NativeBuffer_sendHandleToUnixSocket;
+#endif
 }
 
 void Connection::platformInvalidate()
@@ -200,28 +230,37 @@ bool Connection::processMessage()
 
 #if OS(ANDROID)
     [[maybe_unused]] size_t attachmentHardwareBufferCount = 0;
+#elif OS(OHOS)
+    [[maybe_unused]] size_t attachmentNativeBufferCount = 0;
 #endif
 
     if (attachmentCount) {
         memcpySpan(asMutableByteSpan(attachmentInfo.mutableSpan()), consumeSpan(messageData, sizeof(AttachmentInfo) * attachmentCount));
         for (size_t i = 0; i < attachmentCount; ++i) {
-#if OS(ANDROID)
+#if OS(ANDROID) || OS(OHOS)
             switch (attachmentInfo[i].type()) {
             case AttachmentInfo::Type::FileDescriptor:
                 if (!attachmentInfo[i].isNull())
                     attachmentFileDescriptorCount++;
                 break;
+#if OS(ANDROID)
             case AttachmentInfo::Type::HardwareBuffer:
                 if (!attachmentInfo[i].isNull())
                     attachmentHardwareBufferCount++;
                 break;
+#elif OS(OHOS)
+            case AttachmentInfo::Type::NativeBuffer:
+                if (!attachmentInfo[i].isNull())
+                    attachmentNativeBufferCount++;
+                break;
+#endif
             case AttachmentInfo::Type::Unset:
                 RELEASE_ASSERT_NOT_REACHED();
             }
 #else
             if (!attachmentInfo[i].isNull())
                 attachmentFileDescriptorCount++;
-#endif // OS(ANDROID)
+#endif // OS(ANDROID) || OS(OHOS)
         }
 
         if (messageInfo.isBodyOutOfLine())
@@ -231,8 +270,14 @@ bool Connection::processMessage()
     Vector<Attachment> attachments(attachmentCount);
     RefPtr<WebCore::SharedMemory> oolMessageBody;
 
+
 #if OS(ANDROID)
     RELEASE_ASSERT(attachmentHardwareBufferCount == messageInfo.hardwareBufferCount());
+#elif OS(OHOS)
+    RELEASE_ASSERT(attachmentNativeBufferCount == messageInfo.nativeBufferCount());
+#endif
+
+#if OS(ANDROID) || OS(OHOS)
     size_t fdIndex = 0;
     for (size_t i = 0; i < attachmentCount; ++i) {
         switch (attachmentInfo[i].type()) {
@@ -242,6 +287,7 @@ bool Connection::processMessage()
                 UnixFileDescriptor::Adopt
             };
             break;
+#if OS(ANDROID)
         case AttachmentInfo::Type::HardwareBuffer:
             if (attachmentInfo[i].isNull())
                 attachments[attachmentCount - i - 1] = nullptr;
@@ -251,6 +297,17 @@ bool Connection::processMessage()
                 m_incomingHardwareBuffers.removeAt(0);
             }
             break;
+#elif OS(OHOS)
+        case AttachmentInfo::Type::NativeBuffer:
+            if (attachmentInfo[i].isNull())
+                attachments[attachmentCount - i - 1] = nullptr;
+            else {
+                RELEASE_ASSERT(!m_incomingNativeBuffers.isEmpty());
+                attachments[attachmentCount - i - 1] = WTFMove(m_incomingNativeBuffers.first());
+                m_incomingNativeBuffers.removeAt(0);
+            }
+            break;
+#endif
         case AttachmentInfo::Type::Unset:
             RELEASE_ASSERT_NOT_REACHED();
         }
@@ -261,7 +318,7 @@ bool Connection::processMessage()
         int fd = !attachmentInfo[i].isNull() ? m_fileDescriptors[fdIndex++] : -1;
         attachments[attachmentCount - i - 1] = UnixFileDescriptor { fd, UnixFileDescriptor::Adopt };
     }
-#endif // OS(ANDROID)
+#endif // OS(ANDROID) || OS(OHOS)
 
     if (messageInfo.isBodyOutOfLine()) {
         ASSERT(messageInfo.bodySize());
@@ -391,6 +448,12 @@ void Connection::readyReadHandler()
             RELEASE_ASSERT(processMessage());
         return;
     }
+#elif OS(OHOS)
+    if (m_pendingIncomingNativeBufferCount) {
+        if (receiveIncomingNativeBuffers())
+            RELEASE_ASSERT(processMessage());
+        return;
+    }
 #endif
 
     while (true) {
@@ -428,7 +491,17 @@ void Connection::readyReadHandler()
             if (!receiveIncomingHardwareBuffers())
                 return;
         }
-#endif // OS(ANDROID)
+#elif OS(OHOS)
+        RELEASE_ASSERT(m_readBuffer.size() >= sizeof(MessageInfo));
+        const auto& messageInfo = reinterpretCastSpanStartTo<MessageInfo>(m_readBuffer.span());
+        if (auto nativeBufferCount = messageInfo.nativeBufferCount()) {
+            RELEASE_ASSERT(m_incomingNativeBuffers.isEmpty());
+            RELEASE_ASSERT(!m_pendingIncomingNativeBufferCount);
+            m_pendingIncomingNativeBufferCount = nativeBufferCount;
+            if (!receiveIncomingNativeBuffers())
+                return;
+        }
+#endif
 
         // Process messages from data received.
         while (true) {
@@ -498,6 +571,8 @@ bool Connection::platformCanSendOutgoingMessages() const
 {
 #if OS(ANDROID)
     return !m_pendingOutputMessage && m_outgoingHardwareBuffers.isEmpty();
+#elif OS(OHOS)
+    return !m_pendingOutputMessage && m_outgoingNativeBuffers.isEmpty();
 #else
     return !m_pendingOutputMessage;
 #endif
@@ -540,6 +615,9 @@ bool Connection::sendOutputMessage(UnixMessage& outputMessage)
 #if OS(ANDROID)
     RELEASE_ASSERT(m_outgoingHardwareBuffers.isEmpty());
     Vector<RefPtr<AHardwareBuffer>, 2> hardwareBuffers;
+#elif OS(OHOS)
+    RELEASE_ASSERT(m_outgoingNativeBuffers.isEmpty());
+    Vector<RefPtr<OH_NativeBuffer>, 2> nativeBuffers;
 #endif
 
     auto& messageInfo = outputMessage.messageInfo();
@@ -562,7 +640,7 @@ bool Connection::sendOutputMessage(UnixMessage& outputMessage)
     if (!attachments.isEmpty()) {
         int* fdPtr = 0;
 
-#if OS(ANDROID)
+#if OS(ANDROID) || OS(OHOS)
         size_t attachmentFDBufferLength = 0;
         for (const auto& attachment : attachments) {
             switchOn(attachment,
@@ -570,10 +648,17 @@ bool Connection::sendOutputMessage(UnixMessage& outputMessage)
                     if (!!fd)
                         ++attachmentFDBufferLength;
                 },
+#if OS(ANDROID)
                 [&hardwareBuffers](const RefPtr<AHardwareBuffer>& buffer) {
                     if (buffer)
                         hardwareBuffers.append(buffer);
                 }
+#elif OS(OHOS)
+                [&nativeBuffers](const RefPtr<OH_NativeBuffer>& buffer) {
+                    if (buffer)
+                        nativeBuffers.append(buffer);
+                }
+#endif
             );
         }
 #else
@@ -581,7 +666,7 @@ bool Connection::sendOutputMessage(UnixMessage& outputMessage)
             [](const Attachment& attachment) {
                 return !!attachment;
             });
-#endif // OS(ANDROID)
+#endif // OS(ANDROID) || OS(OHOS)
 
         if (attachmentFDBufferLength) {
             attachmentFDBuffer = MallocSpan<char>::zeroedMalloc(CMSG_SPACE(sizeof(int) * attachmentFDBufferLength));
@@ -600,13 +685,19 @@ bool Connection::sendOutputMessage(UnixMessage& outputMessage)
         attachmentInfo.resize(attachments.size());
         int fdIndex = 0;
         for (size_t i = 0; i < attachments.size(); ++i) {
-#if OS(ANDROID)
+#if OS(ANDROID) || OS(OHOS)
             RELEASE_ASSERT(attachmentInfo[i].type() == AttachmentInfo::Type::Unset);
-
+#if OS(ANDROID)
             if (holdsAlternative<RefPtr<AHardwareBuffer>>(attachments[i])) {
                 attachmentInfo[i].setType(AttachmentInfo::Type::HardwareBuffer);
                 if (!get<RefPtr<AHardwareBuffer>>(attachments[i]))
                     attachmentInfo[i].setNull();
+#elif OS(OHOS)
+            if (holdsAlternative<RefPtr<OH_NativeBuffer>>(attachments[i])) {
+                attachmentInfo[i].setType(AttachmentInfo::Type::NativeBuffer);
+                if (!get<RefPtr<OH_NativeBuffer>>(attachments[i]))
+                    attachmentInfo[i].setNull();
+#endif
             } else if (holdsAlternative<UnixFileDescriptor>(attachments[i])) {
                 attachmentInfo[i].setType(AttachmentInfo::Type::FileDescriptor);
                 if (!!get<UnixFileDescriptor>(attachments[i]))
@@ -623,7 +714,7 @@ bool Connection::sendOutputMessage(UnixMessage& outputMessage)
                 fdPtr[fdIndex++] = attachments[i].value();
             } else
                 attachmentInfo[i].setNull();
-#endif // OS(ANDROID)
+#endif // OS(ANDROID) || OS(OHOS)
         }
 
         iov[iovLength].iov_base = attachmentInfo.mutableSpan().data();
@@ -692,6 +783,10 @@ bool Connection::sendOutputMessage(UnixMessage& outputMessage)
     RELEASE_ASSERT(m_outgoingHardwareBuffers.isEmpty());
     m_outgoingHardwareBuffers = WTFMove(hardwareBuffers);
     return sendOutgoingHardwareBuffers();
+#elif OS(OHOS)
+    RELEASE_ASSERT(m_outgoingNativeBuffers.isEmpty());
+    m_outgoingNativeBuffers = WTFMove(nativeBuffers);
+    return sendOutgoingNativeBuffers();
 #else
     return true;
 #endif
@@ -772,7 +867,82 @@ bool Connection::receiveIncomingHardwareBuffers()
 
     return true;
 }
-#endif // OS(ANDROID)
+#elif OS(OHOS)
+bool Connection::sendOutgoingNativeBuffers()
+{
+    while (!m_outgoingNativeBuffers.isEmpty()) {
+        auto& buffer = m_outgoingNativeBuffers.first();
+        RELEASE_ASSERT(buffer);
+
+        // There is no need to check for EINTR, it is handled internally.
+        int result = m_OH_NativeBuffer_sendHandleToUnixSocket(buffer.get(), socketDescriptor());
+        if (!result) {
+            m_outgoingNativeBuffers.removeAt(0);
+            continue;
+        }
+
+        if (result == -EAGAIN || result == -EWOULDBLOCK) {
+            m_writeSocketMonitor.start(m_socket.get(), G_IO_OUT, m_connectionQueue->runLoop(), [this, protectedThis = Ref { *this }] (GIOCondition condition) -> gboolean {
+                if (condition & G_IO_OUT) {
+                    RELEASE_ASSERT(!m_outgoingNativeBuffers.isEmpty());
+                    // We can't stop the monitor from this lambda, because stop destroys the lambda.
+                    m_connectionQueue->dispatch([this, protectedThis = Ref { *this }] {
+                        m_writeSocketMonitor.stop();
+                        if (m_isConnected) {
+                            if (sendOutgoingNativeBuffers())
+                                sendOutgoingMessages();
+                        }
+                    });
+                }
+                return G_SOURCE_REMOVE;
+            });
+            return false;
+        }
+
+        if (result == -EPIPE || result == -ECONNRESET) {
+            connectionDidClose();
+            return false;
+        }
+
+        if (m_isConnected) {
+            LOG_ERROR("Error sending NativeBuffer on socket %d in process %d: %s", socketDescriptor(), getpid(), safeStrerror(-result).data());
+            connectionDidClose();
+        }
+        return false;
+    }
+
+    RELEASE_ASSERT(m_outgoingNativeBuffers.isEmpty());
+    return true;
+}
+
+bool Connection::receiveIncomingNativeBuffers()
+{
+    while (m_pendingIncomingNativeBufferCount) {
+        OH_NativeBuffer* buffer { nullptr };
+        int result = m_OH_NativeBuffer_recvHandleFromUnixSocket(socketDescriptor(), &buffer);
+        if (!result) {
+            m_pendingIncomingNativeBufferCount--;
+            auto nativeBuffer = adoptRef(buffer);
+            m_incomingNativeBuffers.append(WTFMove(nativeBuffer));
+            continue;
+        }
+
+        if (result == -EAGAIN || result == -EWOULDBLOCK)
+            return false;
+
+        if (result == -ECONNRESET)
+            connectionDidClose();
+
+        if (m_isConnected) {
+            LOG_ERROR("Error receiving NativeBuffer on socket %d in process %d: %s", socketDescriptor(), getpid(), safeStrerror(-result).data());
+            connectionDidClose();
+        }
+        return false;
+    }
+
+    return true;
+}
+#endif // OS(OHOS)
 
 SocketPair createPlatformConnection(unsigned options)
 {

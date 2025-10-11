@@ -681,7 +681,7 @@ WebPage::WebPage(PageIdentifier pageID, WebPageCreationParameters&& parameters)
     , m_overriddenMediaType { WTFMove(parameters.overriddenMediaType) }
     , m_processDisplayName { WTFMove(parameters.processDisplayName) }
 #if PLATFORM(GTK) || PLATFORM(WPE)
-#if USE(GBM)
+#if USE(GBM) || OS(OHOS)
     , m_preferredBufferFormats(WTFMove(parameters.preferredBufferFormats))
 #endif
 #endif

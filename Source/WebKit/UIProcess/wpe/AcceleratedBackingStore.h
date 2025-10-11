@@ -40,6 +40,10 @@
 typedef struct _WPEBuffer WPEBuffer;
 typedef struct _WPEView WPEView;
 
+#if OS(OHOS)
+typedef struct OH_NativeBuffer OH_NativeBuffer;
+#endif // OS(OHOS)
+
 namespace WebCore {
 class ShareableBitmapHandle;
 }
@@ -77,6 +81,9 @@ private:
 
     void didCreateDMABufBuffer(uint64_t id, const WebCore::IntSize&, uint32_t format, Vector<WTF::UnixFileDescriptor>&&, Vector<uint32_t>&& offsets, Vector<uint32_t>&& strides, uint64_t modifier, RendererBufferFormat::Usage);
     void didCreateSHMBuffer(uint64_t id, WebCore::ShareableBitmapHandle&&);
+#if OS(OHOS)
+    void didCreateOHOSBuffer(uint64_t id, RefPtr<OH_NativeBuffer>&&);
+#endif // OS(OHOS)
     void didDestroyBuffer(uint64_t id);
     void frame(uint64_t bufferID, Rects&&, WTF::UnixFileDescriptor&&);
     void frameDone();

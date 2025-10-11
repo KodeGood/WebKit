@@ -257,7 +257,7 @@ enum class WebCore::UserInterfaceLayoutDirection : bool;
 #endif
 
 #if PLATFORM(GTK) || PLATFORM(WPE)
-#if USE(GBM)
+#if USE(GBM) || OS(OHOS)
     Vector<WebKit::RendererBufferFormat> preferredBufferFormats;
 #endif
 #endif

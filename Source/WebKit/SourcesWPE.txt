@@ -57,6 +57,7 @@ NetworkProcess/webrtc/NetworkRTCProvider.cpp
 Platform/IPC/android/ArgumentCodersAndroid.cpp
 
 Platform/IPC/unix/ArgumentCodersUnix.cpp
+Platform/IPC/ohos/ArgumentCodersOHOS.cpp
 Platform/IPC/unix/ConnectionUnix.cpp
 Platform/IPC/unix/IPCSemaphoreUnix.cpp
 

@@ -20,10 +20,12 @@
 #include "config.h"
 #include "GLDisplay.h"
 
+#include "FourCC.h"
 #include "GLContext.h"
 #include <wtf/Locker.h>
 #include <wtf/MainThread.h>
 #include <wtf/text/StringView.h>
+#include "Logging.h"
 
 #if USE(LIBEPOXY)
 #include <epoxy/egl.h>
@@ -32,7 +34,12 @@
 #include <EGL/eglext.h>
 #endif
 
-#if USE(GBM)
+#if OS(OHOS)
+#include "BufferFormatOHOS.h"
+#include <native_buffer/native_buffer.h>
+#include <drm/drm_fourcc.h>
+#include <wtf/NeverDestroyed.h>
+#elif USE(GBM)
 #include <drm_fourcc.h>
 #endif
 
@@ -226,5 +233,50 @@ const Vector<GLDisplay::DMABufFormat>& GLDisplay::dmabufFormatsForVideo()
 }
 #endif
 #endif // USE(GBM)
+
+#if OS(OHOS)
+const Vector<GLDisplay::DMABufFormat>& GLDisplay::dmabufFormats()
+{
+    static LazyNeverDestroyed<Vector<GLDisplay::DMABufFormat>> formats;
+    static std::once_flag flag;
+    std::call_once(flag, []() {
+        formats.construct();
+
+        static constexpr FourCC drmFormats[] = {
+            DRM_FORMAT_RGBA8888,
+            DRM_FORMAT_RGBX8888,
+            DRM_FORMAT_RGB565,
+            DRM_FORMAT_RGBA1010102,
+            DRM_FORMAT_RGB888,
+        };
+
+        Vector<GLDisplay::DMABufFormat> result;
+        OH_NativeBuffer_Config bufferConfig { };
+        bufferConfig.usage = NATIVEBUFFER_USAGE_HW_RENDER;
+
+        for (const auto& drmFormat : drmFormats) {
+            const auto onbFormat = toOHNativeBufferFormat(drmFormat);
+            if (!onbFormat) {
+                RELEASE_LOG_DEBUG(IOSurface, "ONB: Cannot map DRM format '%s', skipped", drmFormat.string().data());
+                continue;
+            }
+
+            bufferConfig.format = onbFormat.value();
+            if (true /* TODO OH_NativeBuffer_IsSupported??? */) {
+                RELEASE_LOG_DEBUG(IOSurface, "ONB: Adding supported DRM format '%s'", drmFormat.string().data());
+                GLDisplay::DMABufFormat format;
+                format.fourcc = drmFormat.value;
+                formats->append(format);
+            } else
+                RELEASE_LOG_DEBUG(IOSurface, "ONB: Skipping unsupported DRM format '%s'", drmFormat.string().data());
+        }
+
+        RELEASE_LOG_DEBUG(IOSurface, "ONB: There are %zu supported formats", result.size());
+        return result;
+    });
+
+    return formats.get();
+}
+#endif // OS(OHOS)
 
 } // namespace WebCore

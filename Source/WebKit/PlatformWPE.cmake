@@ -388,6 +388,7 @@ list(APPEND WebKit_PRIVATE_INCLUDE_DIRECTORIES
     "${WEBKIT_DIR}/NetworkProcess/soup"
     "${WEBKIT_DIR}/Platform/IPC/android"
     "${WEBKIT_DIR}/Platform/IPC/glib"
+    "${WEBKIT_DIR}/Platform/IPC/ohos"
     "${WEBKIT_DIR}/Platform/IPC/unix"
     "${WEBKIT_DIR}/Platform/classifier"
     "${WEBKIT_DIR}/Platform/generic"

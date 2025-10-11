@@ -36,14 +36,24 @@
 #include <wtf/WeakRef.h>
 #include <wtf/unix/UnixFileDescriptor.h>
 
-#if USE(GBM)
+#if USE(GBM) || OS(OHOS)
 #include "RendererBufferFormat.h"
-#include <WebCore/DRMDevice.h>
-#include <WebCore/GBMDevice.h>
 #include <atomic>
 #include <wtf/Lock.h>
-typedef void *EGLImage;
+#endif
+
+#if USE(GBM)
+#include <WebCore/DRMDevice.h>
+#include <WebCore/GBMDevice.h>
 struct gbm_bo;
+#endif
+
+#if OS(OHOS)
+typedef struct OH_NativeBuffer OH_NativeBuffer;
+#endif
+
+#if USE(GBM) || OS(OHOS)
+typedef void *EGLImage;
 #endif
 
 #if USE(WPE_RENDERER)
@@ -107,7 +117,7 @@ public:
     void didCreateCompositingRunLoop(WTF::RunLoop&);
     void willDestroyCompositingRunLoop();
 
-#if PLATFORM(WPE) && USE(GBM) && ENABLE(WPE_PLATFORM)
+#if PLATFORM(WPE) && ENABLE(WPE_PLATFORM) && (USE(GBM) || OS(OHOS))
     void preferredBufferFormatsDidChange();
 #endif
 
@@ -180,7 +190,7 @@ private:
         UnixFileDescriptor m_releaseFenceFD;
     };
 
-#if USE(GBM)
+#if USE(GBM) || OS(OHOS)
     struct BufferFormat {
         BufferFormat() = default;
         ~BufferFormat() = default;
@@ -193,29 +203,43 @@ private:
         BufferFormat& operator=(BufferFormat&& other)
         {
             usage = std::exchange(other.usage, RendererBufferFormat::Usage::Rendering);
-            drmDevice = WTFMove(other.drmDevice);
             fourcc = std::exchange(other.fourcc, 0);
+#if USE(GBM)
             modifiers = WTFMove(other.modifiers);
             gbmDevice = WTFMove(other.gbmDevice);
+#endif
             return *this;
         }
 
         bool operator==(const BufferFormat& other) const
         {
-            return usage == other.usage && drmDevice == other.drmDevice && fourcc == other.fourcc && modifiers == other.modifiers;
+            return usage == other.usage
+                && fourcc == other.fourcc
+#if USE(GBM)
+                && drmDevice == other.drmDevice 
+                && modifiers == other.modifiers
+#endif
+                ;
         }
 
         RendererBufferFormat::Usage usage { RendererBufferFormat::Usage::Rendering };
-        WebCore::DRMDevice drmDevice;
         uint32_t fourcc { 0 };
+#if USE(GBM)
+        WebCore::DRMDevice drmDevice;
         Vector<uint64_t, 1> modifiers;
         RefPtr<WebCore::GBMDevice> gbmDevice;
+#endif
     };
 
     class RenderTargetEGLImage final : public RenderTargetShareableBuffer {
     public:
         static std::unique_ptr<RenderTarget> create(uint64_t, const WebCore::IntSize&, const BufferFormat&);
         RenderTargetEGLImage(uint64_t, const WebCore::IntSize&, EGLImage, uint32_t format, Vector<WTF::UnixFileDescriptor>&&, Vector<uint32_t>&& offsets, Vector<uint32_t>&& strides, uint64_t modifier, RendererBufferFormat::Usage);
+#if OS(OHOS)
+        RenderTargetEGLImage(uint64_t, const WebCore::IntSize&, EGLImage, RefPtr<OH_NativeBuffer>&&);
+
+        void didRenderFrame(Vector<WebCore::IntRect, 1>&&) override;
+#endif
         ~RenderTargetEGLImage();
 
     private:
@@ -224,7 +248,7 @@ private:
         unsigned m_colorBuffer { 0 };
         EGLImage m_image { nullptr };
     };
-#endif
+#endif // USE(GBM) || OS(OHOS)
 
     class RenderTargetSHMImage final : public RenderTargetShareableBuffer {
     public:
@@ -280,7 +304,7 @@ private:
         enum class Type {
             Invalid,
 #if PLATFORM(GTK) || ENABLE(WPE_PLATFORM)
-#if USE(GBM)
+#if USE(GBM) || OS(OHOS)
             EGLImage,
 #endif
             SharedMemory,
@@ -303,7 +327,7 @@ private:
         void addDamage(const std::optional<WebCore::Damage>&);
 #endif
 
-#if USE(GBM) && (PLATFORM(GTK) || ENABLE(WPE_PLATFORM))
+#if (PLATFORM(GTK) || ENABLE(WPE_PLATFORM)) && (USE(GBM) || OS(OHOS))
         void setupBufferFormat(const Vector<RendererBufferFormat>&, bool);
 #endif
 
@@ -322,7 +346,7 @@ private:
         WebCore::IntSize m_size;
         Vector<std::unique_ptr<RenderTarget>, s_maximumBuffers> m_freeTargets;
         Vector<std::unique_ptr<RenderTarget>, s_maximumBuffers> m_lockedTargets;
-#if USE(GBM) && (PLATFORM(GTK) || ENABLE(WPE_PLATFORM))
+#if (PLATFORM(GTK) || ENABLE(WPE_PLATFORM)) && (USE(GBM) || OS(OHOS))
         Lock m_bufferFormatLock;
         BufferFormat m_bufferFormat WTF_GUARDED_BY_LOCK(m_bufferFormatLock);
         bool m_bufferFormatChanged WTF_GUARDED_BY_LOCK(m_bufferFormatLock) { false };

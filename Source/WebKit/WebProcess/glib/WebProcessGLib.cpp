@@ -64,7 +64,7 @@
 #include <WebCore/PlatformDisplaySurfaceless.h>
 #endif
 
-#if PLATFORM(GTK)
+#if PLATFORM(GTK) || PLATFORM(WPE)
 #include <WebCore/PlatformDisplayDefault.h>
 #endif
 
@@ -162,7 +162,7 @@ void WebProcess::initializePlatformDisplayIfNeeded() const
         return;
     }
 
-#if PLATFORM(GTK)
+#if PLATFORM(GTK) || PLATFORM(WPE)
     if (auto display = PlatformDisplayDefault::create()) {
         PlatformDisplay::setSharedDisplay(WTFMove(display));
         return;

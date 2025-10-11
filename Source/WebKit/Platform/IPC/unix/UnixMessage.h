@@ -54,6 +54,16 @@ public:
     }
 
     size_t hardwareBufferCount() const { return m_hardwareBufferCount; }
+#elif OS(OHOS)
+    MessageInfo(size_t bodySize, size_t initialAttachmentCount, size_t nativeBufferCount)
+        : MessageInfo()
+    {
+        m_bodySize = bodySize;
+        m_attachmentCount = initialAttachmentCount;
+        m_nativeBufferCount = nativeBufferCount;
+    }
+
+    size_t nativeBufferCount() const { return m_nativeBufferCount; }
 #else
     MessageInfo(size_t bodySize, size_t initialAttachmentCount)
         : MessageInfo()
@@ -89,8 +99,15 @@ private:
     size_t m_attachmentCount;
 #if OS(ANDROID)
     size_t m_hardwareBufferCount;
+#elif OS(OHOS)
+    size_t m_nativeBufferCount;
 #endif
     bool m_isBodyOutOfLine;
+
+    inline void clear()
+    {
+        memset(static_cast<void*>(this), 0, sizeof(MessageInfo));
+    }
 };
 
 class UnixMessage {
@@ -101,6 +118,10 @@ public:
 #if OS(ANDROID)
         , m_messageInfo(encoder.span().size(), m_attachments.size(), std::count_if(m_attachments.begin(), m_attachments.end(), [](const Attachment& attachment) {
             return holdsAlternative<RefPtr<AHardwareBuffer>>(attachment) && get<RefPtr<AHardwareBuffer>>(attachment);
+        }))
+#elif OS(OHOS)
+        , m_messageInfo(encoder.span().size(), m_attachments.size(), std::count_if(m_attachments.begin(), m_attachments.end(), [](const Attachment& attachment) {
+            return holdsAlternative<RefPtr<OH_NativeBuffer>>(attachment) && get<RefPtr<OH_NativeBuffer>>(attachment);
         }))
 #else
         , m_messageInfo(encoder.span().size(), m_attachments.size())

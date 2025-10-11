@@ -128,6 +128,17 @@ void AcceleratedBackingStore::didCreateSHMBuffer(uint64_t id, WebCore::Shareable
     m_buffers.add(id, WTFMove(buffer));
 }
 
+#if OS(OHOS)
+void AcceleratedBackingStore::didCreateOHOSBuffer(uint64_t id, RefPtr<OH_NativeBuffer>&& nativeBuffer)
+{
+    RELEASE_ASSERT(nativeBuffer);
+
+    GRefPtr buffer = adoptGRef(WPE_BUFFER(wpe_buffer_ohos_new(wpe_view_get_display(m_wpeView.get()), nativeBuffer.get())));
+    m_bufferIDs.add(buffer.get(), id);
+    m_buffers.add(id, WTFMove(buffer));
+}
+#endif // OS(OHOS)
+
 void AcceleratedBackingStore::didDestroyBuffer(uint64_t id)
 {
     if (auto buffer = m_buffers.take(id))
@@ -219,6 +230,14 @@ RendererBufferDescription AcceleratedBackingStore::bufferDescription() const
         }
         description.usage = RendererBufferFormat::Usage::Rendering;
     }
+
+#if OS(OHOS)
+    else if (WPE_IS_BUFFER_OHOS(buffer)) {
+        auto* bufferOHOS = WPE_BUFFER_OHOS(buffer);
+        description.type = RendererBufferDescription::Type::OH_NativeBuffer;
+        description.fourcc = wpe_buffer_ohos_get_format(bufferOHOS);
+    }
+#endif // OS(OHOS)
 
     return description;
 }
