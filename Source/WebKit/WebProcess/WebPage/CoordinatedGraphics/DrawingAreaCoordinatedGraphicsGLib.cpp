@@ -355,7 +355,7 @@ void DrawingAreaCoordinatedGraphics::sendEnterAcceleratedCompositingModeIfNeeded
     m_compositingAccordingToProxyMessages = true;
 }
 
-#if PLATFORM(WPE) && ENABLE(WPE_PLATFORM) && (USE(GBM) || OS(ANDROID))
+#if PLATFORM(WPE) && ENABLE(WPE_PLATFORM) && (USE(GBM) || OS(ANDROID) || OS(OHOS))
 void DrawingAreaCoordinatedGraphics::preferredBufferFormatsDidChange()
 {
     if (!m_renderer)

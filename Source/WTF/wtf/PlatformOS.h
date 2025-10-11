@@ -117,6 +117,11 @@
 #define WTF_OS_NETBSD 1
 #endif
 
+/* OS(OHOS) - OHOS */
+#if defined(__OHOS__) || defined(OHOS)
+#define WTF_OS_OHOS 1
+#endif
+
 /* OS(OPENBSD) - OpenBSD */
 #if defined(__OpenBSD__)
 #define WTF_OS_OPENBSD 1

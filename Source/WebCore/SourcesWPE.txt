@@ -95,6 +95,8 @@ platform/graphics/gbm/VivanteSuperTiledTexture.cpp
 
 platform/graphics/libwpe/PlatformDisplayLibWPE.cpp
 
+platform/graphics/ohos/BufferFormatOHOS.cpp @no-unify
+
 platform/graphics/opentype/OpenTypeVerticalData.cpp
 
 platform/graphics/vulkan/VulkanTypes.cpp

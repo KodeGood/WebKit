@@ -85,6 +85,10 @@
 #endif
 #endif // OS(DARWIN)
 
+#if OS(OHOS)
+#include <wtf/ohos/RefPtrOHOS.h>
+#endif
+
 #if USE(GLIB)
 #include <wtf/glib/GSocketMonitor.h>
 #endif
@@ -100,6 +104,11 @@
 namespace WTF {
 class Thread;
 }
+#if OS(OHOS)
+typedef struct OH_NativeBuffer OH_NativeBuffer;
+using PFOH_NativeBuffer_recvHandleFromUnixSocket = int (*)(int socketFd, OH_NativeBuffer** outBuffer);
+using PFOH_NativeBuffer_sendHandleToUnixSocket = int (*)(const OH_NativeBuffer* buffer, int socketFd);
+#endif
 
 namespace IPC {
 
@@ -786,6 +795,16 @@ private:
     size_t m_pendingIncomingHardwareBufferCount { 0 };
     Vector<RefPtr<AHardwareBuffer>, 2> m_incomingHardwareBuffers;
     Vector<RefPtr<AHardwareBuffer>, 2> m_outgoingHardwareBuffers;
+#elif OS(OHOS)
+    PFOH_NativeBuffer_recvHandleFromUnixSocket m_OH_NativeBuffer_recvHandleFromUnixSocket { nullptr };
+    PFOH_NativeBuffer_sendHandleToUnixSocket m_OH_NativeBuffer_sendHandleToUnixSocket { nullptr };
+
+    bool sendOutgoingNativeBuffers();
+    bool receiveIncomingNativeBuffers();
+
+    size_t m_pendingIncomingNativeBufferCount { 0 };
+    Vector<RefPtr<OH_NativeBuffer>, 2> m_incomingNativeBuffers;
+    Vector<RefPtr<OH_NativeBuffer>, 2> m_outgoingNativeBuffers;
 #endif
 #else
     bool processMessage();

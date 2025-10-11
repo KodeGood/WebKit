@@ -62,6 +62,8 @@ Platform/IPC/android/ArgumentCodersAndroid.cpp
 
 Platform/IPC/glib/ConnectionGLib.cpp
 
+Platform/IPC/ohos/ArgumentCodersOHOS.cpp
+
 Platform/IPC/unix/ArgumentCodersUnix.cpp
 Platform/IPC/unix/IPCSemaphoreUnix.cpp
 Platform/IPC/unix/IPCUtilitiesUnix.cpp
@@ -332,7 +334,7 @@ WebProcess/WebCoreSupport/soup/WebFrameNetworkingContext.cpp
 WebProcess/WebCoreSupport/wpe/WebDragClientWPE.cpp
 WebProcess/WebCoreSupport/wpe/WebEditorClientWPE.cpp
 
-WebProcess/WebPage/CoordinatedGraphics/AcceleratedSurface.cpp
+WebProcess/WebPage/CoordinatedGraphics/AcceleratedSurface.cpp @no-unify
 WebProcess/WebPage/CoordinatedGraphics/CoordinatedSceneState.cpp
 WebProcess/WebPage/CoordinatedGraphics/DrawingAreaCoordinatedGraphicsGLib.cpp
 WebProcess/WebPage/CoordinatedGraphics/FrameRenderer.cpp

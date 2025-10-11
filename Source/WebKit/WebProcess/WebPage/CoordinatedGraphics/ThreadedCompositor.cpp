@@ -231,7 +231,7 @@ void ThreadedCompositor::backgroundColorDidChange()
     m_surface->backgroundColorDidChange();
 }
 
-#if PLATFORM(WPE) && ENABLE(WPE_PLATFORM) && (USE(GBM) || OS(ANDROID))
+#if PLATFORM(WPE) && ENABLE(WPE_PLATFORM) && (USE(GBM) || OS(ANDROID) || OS(OHOS))
 void ThreadedCompositor::preferredBufferFormatsDidChange()
 {
     ASSERT(RunLoop::isMain());

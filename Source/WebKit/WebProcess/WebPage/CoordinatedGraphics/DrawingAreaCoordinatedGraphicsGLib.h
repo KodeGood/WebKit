@@ -69,7 +69,7 @@ private:
     bool enterAcceleratedCompositingModeIfNeeded() override;
     void backgroundColorDidChange() override;
 
-#if PLATFORM(WPE) && ENABLE(WPE_PLATFORM) && (USE(GBM)|| OS(ANDROID))
+#if PLATFORM(WPE) && ENABLE(WPE_PLATFORM) && (USE(GBM) || OS(ANDROID) || OS(OHOS))
     void preferredBufferFormatsDidChange() override;
 #endif
 

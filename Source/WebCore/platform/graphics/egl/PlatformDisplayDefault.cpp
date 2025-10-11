@@ -26,7 +26,7 @@
 #include "config.h"
 #include "PlatformDisplayDefault.h"
 
-#if PLATFORM(GTK) || OS(ANDROID)
+#if PLATFORM(GTK) || OS(ANDROID) || OS(OHOS)
 
 #include "GLContext.h"
 #include <epoxy/egl.h>
@@ -57,4 +57,4 @@ PlatformDisplayDefault::~PlatformDisplayDefault() = default;
 
 } // namespace WebCore
 
-#endif // PLATFORM(GTK) || OS(ANDROID)
+#endif // PLATFORM(GTK) || OS(ANDROID) || OS(OHOS)

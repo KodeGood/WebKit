@@ -41,6 +41,11 @@
 #include <android/hardware_buffer.h>
 #include <drm/drm_fourcc.h>
 #include <wtf/NeverDestroyed.h>
+#elif OS(OHOS)
+#include "BufferFormatOHOS.h"
+#include <drm/drm_fourcc.h>
+#include <native_buffer/native_buffer.h>
+#include <wtf/NeverDestroyed.h>
 #elif USE(GBM)
 #include <drm_fourcc.h>
 #endif
@@ -347,5 +352,39 @@ const Vector<GLDisplay::BufferFormat>& GLDisplay::bufferFormats()
     return formats.get();
 }
 #endif // OS(ANDROID)
+
+#if OS(OHOS)
+const Vector<GLDisplay::BufferFormat>& GLDisplay::bufferFormats()
+{
+    static LazyNeverDestroyed<Vector<GLDisplay::BufferFormat>> formats;
+    static std::once_flag flag;
+    std::call_once(flag, []() {
+        formats.construct();
+
+        static constexpr FourCC drmFormats[] = {
+            DRM_FORMAT_RGBA8888,
+            DRM_FORMAT_RGBX8888,
+            DRM_FORMAT_RGB565,
+            DRM_FORMAT_RGBA1010102,
+            DRM_FORMAT_RGB888,
+        };
+
+        for (const auto& drmFormat : drmFormats) {
+            const auto onbFormat = toOHNativeBufferFormat(drmFormat);
+            if (!onbFormat) {
+                RELEASE_LOG_DEBUG(GraphicsBuffer, "ONB: Cannot map DRM format '%s', skipped", drmFormat.string().data());
+                continue;
+            }
+
+            // FIXME: check support once OH_NativeBuffer exposes an equivalent of AHardwareBuffer_isSupported().
+            RELEASE_LOG_DEBUG(GraphicsBuffer, "ONB: Adding supported DRM format '%s'", drmFormat.string().data());
+            formats->append(GLDisplay::BufferFormat { drmFormat.value });
+        }
+        RELEASE_LOG_DEBUG(GraphicsBuffer, "ONB: There are %zu supported formats", formats->size());
+    });
+
+    return formats.get();
+}
+#endif // OS(OHOS)
 
 } // namespace WebCore

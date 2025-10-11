@@ -45,11 +45,11 @@
 #include <wpe/wpe-platform.h>
 #endif
 
-#if USE(GBM) || OS(ANDROID)
+#if USE(GBM) || OS(ANDROID) || OS(OHOS)
 #include "RendererBufferFormat.h"
 #endif
 
-#if ENABLE(WPE_PLATFORM) && (USE(GBM) || OS(ANDROID))
+#if ENABLE(WPE_PLATFORM) && (USE(GBM) || OS(ANDROID) || OS(OHOS))
 #include "MessageSenderInlines.h"
 #include "WebPageMessages.h"
 #endif
@@ -126,7 +126,7 @@ void WebPageProxy::setInputMethodState(std::optional<InputMethodState>&& state)
         static_cast<PageClientImpl&>(*pageClient).setInputMethodState(WTF::move(state));
 }
 
-#if USE(GBM) || OS(ANDROID)
+#if USE(GBM) || OS(ANDROID) || OS(OHOS)
 Vector<RendererBufferFormat> WebPageProxy::preferredBufferFormats() const
 {
 #if ENABLE(WPE_PLATFORM)
@@ -194,7 +194,7 @@ void WebPageProxy::preferredBufferFormatsDidChange()
     legacyMainFrameProcess().send(Messages::WebPage::PreferredBufferFormatsDidChange(preferredBufferFormats()), webPageIDInMainFrameProcess());
 }
 #endif
-#endif // USE(GBM) || OS(ANDROID)
+#endif // USE(GBM) || OS(ANDROID) || OS(OHOS)
 
 OptionSet<WebCore::PlatformEvent::Modifier> WebPageProxy::currentStateOfModifierKeys()
 {

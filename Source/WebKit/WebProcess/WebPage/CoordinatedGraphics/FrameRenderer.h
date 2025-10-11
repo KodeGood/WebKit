@@ -60,7 +60,7 @@ public:
     virtual void setRootCompositingLayer(WebCore::GraphicsLayer*) { RELEASE_ASSERT_NOT_REACHED(); }
     virtual void setViewOverlayRootLayer(WebCore::GraphicsLayer*) { RELEASE_ASSERT_NOT_REACHED(); }
 
-#if PLATFORM(WPE) && ENABLE(WPE_PLATFORM) && (USE(GBM) || OS(ANDROID))
+#if PLATFORM(WPE) && ENABLE(WPE_PLATFORM) && (USE(GBM) || OS(ANDROID) || OS(OHOS))
     virtual void preferredBufferFormatsDidChange() { }
 #endif
 
