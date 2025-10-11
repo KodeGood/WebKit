@@ -65,6 +65,10 @@
 #include <wpe/WPEProcessManager.h>
 #endif
 
+#ifdef WPE_PLATFORM_BUFFER_OHOS
+#include <wpe/WPEBufferOHOS.h>
+#endif
+
 #undef __WPE_PLATFORM_H_INSIDE__
 
 #endif /* __WPE_PLATFORM_H__ */

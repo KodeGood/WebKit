@@ -795,7 +795,7 @@ messages -> WebPage WantsAsyncDispatchMessage {
     GetRenderProcessInfo() -> (struct WebKit::RenderProcessInfo info)
 #endif
 
-#if PLATFORM(WPE) && ENABLE(WPE_PLATFORM) && (USE(GBM) || OS(ANDROID))
+#if PLATFORM(WPE) && ENABLE(WPE_PLATFORM) && (USE(GBM) || OS(ANDROID) || OS(OHOS))
     PreferredBufferFormatsDidChange(Vector<WebKit::RendererBufferFormat> preferredBufferFormats)
 #endif
 

@@ -15,6 +15,7 @@ set(WPEPlatform_SOURCES
     ${WEBKIT_DIR}/WPEPlatform/wpe/WPEBufferAndroid.cpp
     ${WEBKIT_DIR}/WPEPlatform/wpe/WPEBufferDMABuf.cpp
     ${WEBKIT_DIR}/WPEPlatform/wpe/WPEBufferFormats.cpp
+    ${WEBKIT_DIR}/WPEPlatform/wpe/WPEBufferOHOS.cpp
     ${WEBKIT_DIR}/WPEPlatform/wpe/WPEBufferSHM.cpp
     ${WEBKIT_DIR}/WPEPlatform/wpe/WPEClipboard.cpp
     ${WEBKIT_DIR}/WPEPlatform/wpe/WPEColor.cpp
@@ -50,6 +51,7 @@ set(WPEPlatform_INSTALLED_HEADERS
     ${WEBKIT_DIR}/WPEPlatform/wpe/WPEBufferAndroid.h
     ${WEBKIT_DIR}/WPEPlatform/wpe/WPEBufferDMABuf.h
     ${WEBKIT_DIR}/WPEPlatform/wpe/WPEBufferFormats.h
+    ${WEBKIT_DIR}/WPEPlatform/wpe/WPEBufferOHOS.h
     ${WEBKIT_DIR}/WPEPlatform/wpe/WPEBufferSHM.h
     ${WEBKIT_DIR}/WPEPlatform/wpe/WPEClipboard.h
     ${WEBKIT_DIR}/WPEPlatform/wpe/WPEColor.h
@@ -154,6 +156,10 @@ if (USE_MANETTE)
         ${WEBKIT_DIR}/WPEPlatform/wpe/WPEGamepadManagerManette.cpp
         ${WEBKIT_DIR}/WPEPlatform/wpe/WPEGamepadManette.cpp
     )
+endif ()
+
+if (OHOS)
+    list(APPEND WPEPlatform_LIBRARIES OHOS::NativeBuffer OHOS::NativeWindow)
 endif ()
 
 if (ENABLE_WPE_PLATFORM_DRM)

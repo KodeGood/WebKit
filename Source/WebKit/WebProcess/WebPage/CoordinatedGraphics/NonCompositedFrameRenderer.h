@@ -66,7 +66,7 @@ private:
     void sizeDidChange() override;
     bool ensureDrawing() override;
     void fillGLInformation(RenderProcessInfo&&, CompletionHandler<void(RenderProcessInfo&&)>&&) override;
-#if PLATFORM(WPE) && ENABLE(WPE_PLATFORM) && (USE(GBM) || OS(ANDROID))
+#if PLATFORM(WPE) && ENABLE(WPE_PLATFORM) && (USE(GBM) || OS(ANDROID) || OS(OHOS))
     void preferredBufferFormatsDidChange() override;
 #endif
 #if ENABLE(DAMAGE_TRACKING)

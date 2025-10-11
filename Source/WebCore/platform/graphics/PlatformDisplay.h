@@ -82,7 +82,7 @@ public:
 #if OS(ANDROID)
         Android,
 #endif
-#if PLATFORM(GTK) || OS(ANDROID)
+#if PLATFORM(GTK) || OS(ANDROID) || OS(OHOS)
         Default,
 #endif
     };
@@ -99,7 +99,7 @@ public:
 
     EGLImage createEGLImage(EGLContext, EGLenum target, EGLClientBuffer, const Vector<EGLAttrib>&) const;
     bool destroyEGLImage(EGLImage) const;
-#if USE(GBM) || OS(ANDROID)
+#if USE(GBM) || OS(ANDROID) || OS(OHOS)
     const Vector<GLDisplay::BufferFormat>& bufferFormats();
 #endif
 #if USE(GBM) && USE(GSTREAMER)

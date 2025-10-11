@@ -179,7 +179,7 @@ public:
     virtual void releaseMemory(WTF::Critical) { }
 #endif
 
-#if PLATFORM(WPE) && ENABLE(WPE_PLATFORM) && (USE(GBM) || OS(ANDROID))
+#if PLATFORM(WPE) && ENABLE(WPE_PLATFORM) && (USE(GBM) || OS(ANDROID) || OS(OHOS))
     virtual void preferredBufferFormatsDidChange() { }
 #endif
 

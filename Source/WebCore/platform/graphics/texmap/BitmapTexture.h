@@ -80,7 +80,7 @@ public:
         return adoptRef(*new BitmapTexture(size, flags));
     }
 
-#if USE(GBM) || OS(ANDROID)
+#if USE(GBM) || OS(ANDROID) || OS(OHOS)
     static Ref<BitmapTexture> create(EGLImage image, const IntSize& size, OptionSet<Flags> flags = { })
     {
         return adoptRef(*new BitmapTexture(image, size, flags));
@@ -129,7 +129,7 @@ public:
 
 private:
     BitmapTexture(const IntSize&, OptionSet<Flags>);
-#if USE(GBM) || OS(ANDROID)
+#if USE(GBM) || OS(ANDROID) || OS(OHOS)
     BitmapTexture(EGLImage, const IntSize&, OptionSet<Flags>);
 #endif
 

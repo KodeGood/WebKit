@@ -328,7 +328,7 @@ bool NonCompositedFrameRenderer::ensureDrawing()
     return true;
 }
 
-#if PLATFORM(WPE) && ENABLE(WPE_PLATFORM) && (USE(GBM) || OS(ANDROID))
+#if PLATFORM(WPE) && ENABLE(WPE_PLATFORM) && (USE(GBM) || OS(ANDROID) || OS(OHOS))
 void NonCompositedFrameRenderer::preferredBufferFormatsDidChange()
 {
     ASSERT(RunLoop::isMain());
