@@ -618,7 +618,7 @@ struct WebURLSchemeHandlerIdentifierType;
 struct WebUndoStepIDType;
 struct WebsitePoliciesData;
 
-#if (PLATFORM(GTK) || PLATFORM(WPE)) && (USE(GBM) || OS(ANDROID))
+#if (PLATFORM(GTK) || PLATFORM(WPE)) && (USE(GBM) || OS(ANDROID) || OS(OHOS))
 struct RendererBufferFormat;
 #endif
 
@@ -2657,7 +2657,7 @@ public:
     OptionSet<WebCore::AdvancedPrivacyProtections> advancedPrivacyProtectionsPolicies() const { return m_advancedPrivacyProtectionsPolicies; }
 #endif
 
-#if ENABLE(WPE_PLATFORM) && (USE(GBM) || OS(ANDROID))
+#if ENABLE(WPE_PLATFORM) && (USE(GBM) || OS(ANDROID) || OS(OHOS))
     void preferredBufferFormatsDidChange();
 #endif
 
@@ -2870,7 +2870,7 @@ public:
     bool toolbarsAreVisible() const { return m_toolbarsAreVisible; }
     void setToolbarsAreVisible(bool);
 
-#if (PLATFORM(GTK) || PLATFORM(WPE)) && (USE(GBM) || OS(ANDROID))
+#if (PLATFORM(GTK) || PLATFORM(WPE)) && (USE(GBM) || OS(ANDROID) || OS(OHOS))
     Vector<RendererBufferFormat> preferredBufferFormats() const;
 #endif
 

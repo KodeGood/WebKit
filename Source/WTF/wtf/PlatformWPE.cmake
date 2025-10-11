@@ -22,6 +22,9 @@ list(APPEND WTF_SOURCES
     linux/MemoryFootprintLinux.cpp
     linux/RealTimeThreads.cpp
 
+    ohos/LoggingOHOS.cpp
+    ohos/RefPtrOHOS.cpp
+
     posix/CPUTimePOSIX.cpp
     posix/FileHandlePOSIX.cpp
     posix/FileSystemPOSIX.cpp
@@ -63,6 +66,9 @@ list(APPEND WTF_PUBLIC_HEADERS
     linux/ProcessMemoryFootprint.h
     linux/RealTimeThreads.h
 
+    ohos/LoggingOHOS.h
+    ohos/RefPtrOHOS.h
+
     posix/SocketPOSIX.h
 
     unix/UnixFileDescriptor.h
@@ -84,6 +90,10 @@ endif ()
 
 if (ANDROID)
     list(APPEND WTF_LIBRARIES Android::Android Android::Log)
+endif ()
+
+if (OHOS)
+    list(APPEND WTF_LIBRARIES OHOS::NativeBuffer OHOS::Log)
 endif ()
 
 if (USE_LIBBACKTRACE)

@@ -37,6 +37,9 @@ struct RendererBufferDescription {
 #if OS(ANDROID)
         AHardwareBuffer,
 #endif
+#if OS(OHOS)
+        OH_NativeBuffer,
+#endif
     };
 
     Type type { Type::DMABuf };

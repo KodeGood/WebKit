@@ -842,7 +842,7 @@ void DrawingAreaCoordinatedGraphics::didDiscardBackingStore()
     m_dirtyRegion = m_webPage->bounds();
 }
 
-#if PLATFORM(WPE) && ENABLE(WPE_PLATFORM) && (USE(GBM) || OS(ANDROID))
+#if PLATFORM(WPE) && ENABLE(WPE_PLATFORM) && (USE(GBM) || OS(ANDROID) || OS(OHOS))
 void DrawingAreaCoordinatedGraphics::preferredBufferFormatsDidChange()
 {
     if (m_layerTreeHost)
