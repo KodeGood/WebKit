@@ -287,6 +287,11 @@ static String renderBufferDescription(WebKitURISchemeRequest* request)
             bufferDescription.append("AHardwareBuffer: "_s, formatName);
             break;
 #endif
+#if OS(OHOS)
+        case RendererBufferDescription::Type::OH_NativeBuffer:
+            bufferDescription.append("OH_NativeBuffer: "_s, formatName);
+            break;
+#endif
         }
         switch (description.usage) {
         case RendererBufferFormat::Usage::Rendering:

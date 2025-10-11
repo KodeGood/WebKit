@@ -46,6 +46,8 @@
 
 #if OS(ANDROID)
 #include "ArgumentCodersAndroid.h"
+#elif OS(OHOS)
+#include "ArgumentCodersOHOS.h"
 #endif
 #if USE(GLIB)
 #include "ArgumentCodersGlib.h"

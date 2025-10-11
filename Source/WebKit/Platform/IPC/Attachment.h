@@ -35,6 +35,11 @@
 #include <wtf/android/RefPtrAndroid.h>
 #endif
 
+#if OS(OHOS)
+#include <wtf/Variant.h>
+#include <wtf/ohos/RefPtrOHOS.h>
+#endif
+
 #if USE(UNIX_DOMAIN_SOCKETS)
 #include <wtf/unix/UnixFileDescriptor.h>
 #endif
@@ -49,6 +54,8 @@ using Attachment = MachSendRight;
 struct Attachment { }; // Windows does not need attachments at the moment.
 #elif OS(ANDROID)
 using Attachment = Variant<UnixFileDescriptor, RefPtr<AHardwareBuffer>>;
+#elif OS(OHOS)
+using Attachment = Variant<UnixFileDescriptor, RefPtr<OH_NativeBuffer>>;
 #elif USE(UNIX_DOMAIN_SOCKETS)
 using Attachment = UnixFileDescriptor;
 #else

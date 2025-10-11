@@ -67,7 +67,7 @@ public:
     };
     const Extensions& extensions() const { return m_extensions; }
 
-#if USE(GBM) || OS(ANDROID)
+#if USE(GBM) || OS(ANDROID) || OS(OHOS)
     struct BufferFormat {
         FourCC fourcc { 0 };
 #if USE(GBM)

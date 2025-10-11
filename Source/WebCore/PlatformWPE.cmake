@@ -33,6 +33,7 @@ list(APPEND WebCore_PRIVATE_INCLUDE_DIRECTORIES
     "${WEBCORE_DIR}/platform/graphics/epoxy"
     "${WEBCORE_DIR}/platform/graphics/gbm"
     "${WEBCORE_DIR}/platform/graphics/gstreamer"
+    "${WEBCORE_DIR}/platform/graphics/ohos"
     "${WEBCORE_DIR}/platform/graphics/opengl"
     "${WEBCORE_DIR}/platform/graphics/opentype"
     "${WEBCORE_DIR}/platform/graphics/libwpe"
@@ -67,6 +68,8 @@ list(APPEND WebCore_PRIVATE_FRAMEWORK_HEADERS
     platform/graphics/gbm/PlatformDisplayGBM.h
 
     platform/graphics/libwpe/PlatformDisplayLibWPE.h
+
+    platform/graphics/ohos/BufferFormatOHOS.h
 )
 
 set(WebCore_USER_AGENT_SCRIPTS_DEPENDENCIES ${WEBCORE_DIR}/platform/wpe/RenderThemeWPE.cpp)

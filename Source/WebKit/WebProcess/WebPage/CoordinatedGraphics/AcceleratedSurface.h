@@ -39,7 +39,7 @@
 #include <wtf/WeakRef.h>
 #include <wtf/unix/UnixFileDescriptor.h>
 
-#if USE(GBM) || OS(ANDROID)
+#if USE(GBM) || OS(ANDROID) || OS(OHOS)
 #include "RendererBufferFormat.h"
 #include <atomic>
 #include <wtf/Lock.h>
@@ -55,7 +55,11 @@ struct gbm_bo;
 typedef struct AHardwareBuffer AHardwareBuffer;
 #endif
 
-#if USE(GBM) || OS(ANDROID)
+#if OS(OHOS)
+typedef struct OH_NativeBuffer OH_NativeBuffer;
+#endif
+
+#if USE(GBM) || OS(ANDROID) || OS(OHOS)
 typedef void *EGLImage;
 #endif
 
@@ -129,7 +133,7 @@ public:
     void didCreateCompositingRunLoop(WTF::RunLoop&);
     void willDestroyCompositingRunLoop();
 
-#if PLATFORM(WPE) && ENABLE(WPE_PLATFORM) && (USE(GBM) || OS(ANDROID))
+#if PLATFORM(WPE) && ENABLE(WPE_PLATFORM) && (USE(GBM) || OS(ANDROID) || OS(OHOS))
     void preferredBufferFormatsDidChange();
 #endif
 
@@ -213,7 +217,7 @@ private:
         WebCore::IntSize m_initialSize;
     };
 
-#if USE(GBM) || OS(ANDROID)
+#if USE(GBM) || OS(ANDROID) || OS(OHOS)
     struct BufferFormat {
         BufferFormat() = default;
         BufferFormat(const BufferFormat&) = delete;
@@ -261,6 +265,11 @@ private:
 #if OS(ANDROID)
         RenderTargetEGLImage(uint64_t, const WebCore::IntSize&, EGLImage, RefPtr<AHardwareBuffer>&&);
 #endif
+#if OS(OHOS)
+        RenderTargetEGLImage(uint64_t, const WebCore::IntSize&, EGLImage, RefPtr<OH_NativeBuffer>&&);
+
+        void didRenderFrame(Vector<WebCore::IntRect, 1>&&) override;
+#endif
         ~RenderTargetEGLImage();
 
     private:
@@ -270,7 +279,7 @@ private:
         unsigned m_colorBuffer { 0 };
         EGLImage m_image { nullptr };
     };
-#endif // USE(GBM) || OS(ANDROID)
+#endif // USE(GBM) || OS(ANDROID) || OS(OHOS)
 
     class RenderTargetSHMImage final : public RenderTargetShareableBuffer {
     public:
@@ -325,7 +334,7 @@ private:
         enum class Type {
             Invalid,
 #if PLATFORM(GTK) || ENABLE(WPE_PLATFORM)
-#if USE(GBM) || OS(ANDROID)
+#if USE(GBM) || OS(ANDROID) || OS(OHOS)
             EGLImage,
 #endif
             SharedMemory,
@@ -348,7 +357,7 @@ private:
         void addDamage(const std::optional<WebCore::Damage>&);
 #endif
 
-#if (PLATFORM(GTK) || ENABLE(WPE_PLATFORM)) && (USE(GBM) || OS(ANDROID))
+#if (PLATFORM(GTK) || ENABLE(WPE_PLATFORM)) && (USE(GBM) || OS(ANDROID) || OS(OHOS))
         void setupBufferFormat(const Vector<RendererBufferFormat>&, bool);
 #endif
 
@@ -370,7 +379,7 @@ private:
         Vector<std::unique_ptr<RenderTarget>, s_maximumBuffers> m_freeTargets;
         Vector<std::unique_ptr<RenderTarget>, s_maximumBuffers> m_lockedTargets;
         bool m_initialTargetsCreated { false };
-#if (PLATFORM(GTK) || ENABLE(WPE_PLATFORM)) && (USE(GBM) || OS(ANDROID))
+#if (PLATFORM(GTK) || ENABLE(WPE_PLATFORM)) && (USE(GBM) || OS(ANDROID) || OS(OHOS))
         Lock m_bufferFormatLock;
         BufferFormat m_bufferFormat WTF_GUARDED_BY_LOCK(m_bufferFormatLock);
         bool m_bufferFormatChanged WTF_GUARDED_BY_LOCK(m_bufferFormatLock) { false };

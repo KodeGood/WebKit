@@ -44,6 +44,10 @@ typedef struct _WPEView WPEView;
 typedef struct AHardwareBuffer AHardwareBuffer;
 #endif
 
+#if OS(OHOS)
+typedef struct OH_NativeBuffer OH_NativeBuffer;
+#endif
+
 namespace WebCore {
 class ShareableBitmapHandle;
 }
@@ -88,6 +92,9 @@ private:
     void didCreateSHMBuffer(uint64_t id, WebCore::ShareableBitmapHandle&&);
 #if OS(ANDROID)
     void didCreateAndroidBuffer(uint64_t id, RefPtr<AHardwareBuffer>&&);
+#endif
+#if OS(OHOS)
+    void didCreateOHOSBuffer(uint64_t id, RefPtr<OH_NativeBuffer>&&);
 #endif
     void didChangeBufferConfiguration(uint32_t bufferCount);
     void didDestroyBuffer(uint64_t id);

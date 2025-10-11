@@ -74,7 +74,7 @@ private:
     void backgroundColorDidChange() override;
 #endif
 
-#if PLATFORM(WPE) && ENABLE(WPE_PLATFORM) && (USE(GBM)|| OS(ANDROID))
+#if PLATFORM(WPE) && ENABLE(WPE_PLATFORM) && (USE(GBM) || OS(ANDROID) || OS(OHOS))
     void preferredBufferFormatsDidChange() override;
 #endif
 
