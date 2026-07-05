@@ -59,7 +59,7 @@ endif ()
 
 include(CMakePushCheckState)
 include(CheckFunctionExists)
-include(CheckIncludeFile)
+include(CheckIncludeFileCXX)
 
 function(_OHOSHandleComponent target)
     if (TARGET OHOS::${target})
@@ -86,7 +86,7 @@ function(_OHOSHandleComponent target)
         list(APPEND deplibs OHOS::${dep})
     endforeach ()
 
-    check_include_file("${header}" OHOS_COMPONENT_${target}_HAS_HEADER)
+    check_include_file_cxx("${header}" OHOS_COMPONENT_${target}_HAS_HEADER)
     if (NOT OHOS_COMPONENT_${target}_HAS_HEADER)
         message(STATUS "Missing header ${header}")
         return()
