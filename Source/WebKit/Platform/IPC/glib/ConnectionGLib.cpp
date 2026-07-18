@@ -26,7 +26,10 @@
 #include "config.h"
 #include "Connection.h"
 
-#if USE(GLIB)
+// OHOS transports IPC over OpenHarmony binder (IPCKit), not Unix domain sockets.
+// It provides its own Connection implementation in Platform/IPC/ohos/ConnectionOHOS.cpp,
+// so this socket backend is excluded from the OHOS build.
+#if USE(GLIB) && !OS(OHOS)
 #include "IPCUtilities.h"
 #include "Logging.h"
 #include "UnixMessage.h"
@@ -578,4 +581,4 @@ bool Connection::receiveIncomingHardwareBuffers()
 
 } // namespace IPC
 
-#endif // USE(GLIB)
+#endif // USE(GLIB) && !OS(OHOS)
