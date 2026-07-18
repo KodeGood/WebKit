@@ -106,12 +106,24 @@ namespace WTF {
 class Thread;
 }
 #if OS(OHOS)
+// Opaque IPCKit / native_buffer types. The OHOS backend transports messages over
+// OpenHarmony binder (IPCKit) instead of Unix domain sockets; see
+// Platform/IPC/ohos/ConnectionOHOS.cpp.
 typedef struct OH_NativeBuffer OH_NativeBuffer;
-using PFOH_NativeBuffer_recvHandleFromUnixSocket = int (*)(int socketFd, OH_NativeBuffer** outBuffer);
-using PFOH_NativeBuffer_sendHandleToUnixSocket = int (*)(const OH_NativeBuffer* buffer, int socketFd);
+typedef struct OHIPCRemoteStub OHIPCRemoteStub;
+typedef struct OHIPCRemoteProxy OHIPCRemoteProxy;
+typedef struct OHIPCDeathRecipient OHIPCDeathRecipient;
+typedef struct OHIPCParcel OHIPCParcel;
 #endif
 
 namespace IPC {
+
+#if OS(OHOS)
+// Thread-safe bridge between binder thread-pool callbacks and a Connection, plus the
+// per-message payload it hands over. Both defined in Platform/IPC/ohos/ConnectionOHOS.cpp.
+class OHOSReceiveContext;
+struct IncomingParcel;
+#endif
 
 enum class SendOption : uint8_t {
     // Whether this message should be dispatched when waiting for a sync reply.
@@ -310,7 +322,26 @@ public:
         Identifier(Identifier&&) = default;
         Identifier& operator=(Identifier&&) = default;
 
-#if USE(UNIX_DOMAIN_SOCKETS)
+#if OS(OHOS)
+        // OHOS binder endpoints. Exactly one of the two pointers is populated at
+        // construction; ConnectionOHOS establishes the complementary endpoint during
+        // connection setup (the "initiator" holds peerProxy and announces its own
+        // localStub over the reverse channel; the "acceptor" holds localStub and
+        // receives peerProxy in the peer's first request). Ownership of the binder
+        // objects transfers to the Connection in platformInitialize().
+        explicit Identifier(Handle&&);
+        explicit Identifier(OHIPCRemoteProxy* peerProxy)
+            : peerProxy(peerProxy)
+        {
+        }
+        explicit Identifier(OHIPCRemoteStub* localStub)
+            : localStub(localStub)
+        {
+        }
+        operator bool() const { return peerProxy || localStub; }
+        OHIPCRemoteProxy* peerProxy { nullptr };
+        OHIPCRemoteStub* localStub { nullptr };
+#elif USE(UNIX_DOMAIN_SOCKETS)
         explicit Identifier(Handle&& handle)
             : Identifier({ handle.release(), UnixFileDescriptor::Adopt })
         {
@@ -358,7 +389,7 @@ public:
     pid_t remoteProcessID() const;
 #endif
 
-#if USE(GLIB)
+#if USE(GLIB) && !OS(OHOS)
     void sendCredentials() const;
     static pid_t remoteProcessID(GSocket*);
 #endif
@@ -371,6 +402,13 @@ public:
         IPC::Connection::Handle client;
     };
     static std::optional<ConnectionIdentifierPair> createConnectionIdentifierPair();
+
+#if OS(OHOS)
+    // Creates + registers a binder receive stub to serve as a child process's Connection
+    // receive endpoint (framework-owned). Returned to AbilityKit from the child's exported
+    // NativeChildProcess_OnConnect(); see Shared/ohos/WebKitOHOSProcessEntry.h.
+    static OHIPCRemoteStub* createChildReceiveStub();
+#endif
 
     ~Connection();
 
@@ -773,7 +811,32 @@ private:
     bool m_ignoreInvalidMessageForTesting { false };
 #endif
 
-#if USE(UNIX_DOMAIN_SOCKETS)
+#if OS(OHOS)
+    // OHOS binder transport. Implemented in Platform/IPC/ohos/ConnectionOHOS.cpp.
+    // The stub request callback and the death-recipient callback fire on binder
+    // thread-pool threads; they hop onto m_connectionQueue via m_receiveContext,
+    // which is detached under a lock in platformInvalidate() so that late callbacks
+    // arriving after teardown are dropped safely.
+    friend class OHOSReceiveContext;
+
+    static int didReceiveBinderRequest(uint32_t code, const OHIPCParcel* data, OHIPCParcel* reply, void* userData);
+    static void didReceiveBinderDeath(void* userData);
+    void dispatchIncomingParcelOnQueue(IncomingParcel&&);   // Called on the connection queue.
+    void dispatchBinderDeathOnQueue();
+    void installDeathRecipient();
+    void sendReverseChannelHandshake();
+
+    OHIPCRemoteProxy* m_peerProxy { nullptr };    // Send endpoint: proxy to the peer's stub.
+    OHIPCRemoteStub* m_localStub { nullptr };      // Receive endpoint: hosts didReceiveBinderRequest().
+    OHIPCDeathRecipient* m_deathRecipient { nullptr };
+    OHIPCParcel* m_replyParcel { nullptr };        // Passed to async SendRequest; IPCKit logs an error per call when it is null.
+    RefPtr<OHOSReceiveContext> m_receiveContext;
+    bool m_ownsLocalStub { false };                // False when the stub is owned by the child-process framework.
+    bool m_isInitiator { false };                  // True when we hold peerProxy at init and must announce m_localStub.
+    bool m_didAnnounceLocalStub { false };          // Guards the one-time reverse-channel stub handoff.
+    uint32_t m_outgoingSequence { 0 };              // Per-connection send counter (connection queue only).
+    uint32_t m_expectedIncomingSequence { 0 };      // Ordering watchdog for received frames (connection queue only).
+#elif USE(UNIX_DOMAIN_SOCKETS)
     // Called on the connection queue.
     void readyReadHandler();
     bool sendOutputMessage(UnixMessage&&);
@@ -796,16 +859,6 @@ private:
     size_t m_pendingIncomingHardwareBufferCount { 0 };
     Vector<RefPtr<AHardwareBuffer>, 2> m_incomingHardwareBuffers;
     Vector<RefPtr<AHardwareBuffer>, 2> m_outgoingHardwareBuffers;
-#elif OS(OHOS)
-    PFOH_NativeBuffer_recvHandleFromUnixSocket m_OH_NativeBuffer_recvHandleFromUnixSocket { nullptr };
-    PFOH_NativeBuffer_sendHandleToUnixSocket m_OH_NativeBuffer_sendHandleToUnixSocket { nullptr };
-
-    bool sendOutgoingNativeBuffers();
-    bool receiveIncomingNativeBuffers();
-
-    size_t m_pendingIncomingNativeBufferCount { 0 };
-    Vector<RefPtr<OH_NativeBuffer>, 2> m_incomingNativeBuffers;
-    Vector<RefPtr<OH_NativeBuffer>, 2> m_outgoingNativeBuffers;
 #endif
 #else
     bool processMessage();

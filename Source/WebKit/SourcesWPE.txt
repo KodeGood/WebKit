@@ -63,6 +63,7 @@ Platform/IPC/android/ArgumentCodersAndroid.cpp
 Platform/IPC/glib/ConnectionGLib.cpp
 
 Platform/IPC/ohos/ArgumentCodersOHOS.cpp
+Platform/IPC/ohos/ConnectionOHOS.cpp
 
 Platform/IPC/unix/ArgumentCodersUnix.cpp
 Platform/IPC/unix/IPCSemaphoreUnix.cpp
@@ -99,6 +100,8 @@ Shared/libwpe/NativeWebWheelEventLibWPE.cpp
 Shared/libwpe/WebEventFactory.cpp
 
 Shared/linux/WebMemorySamplerLinux.cpp
+
+Shared/ohos/OHOSChildProcessEntry.cpp @no-unify
 
 Shared/soup/WebErrorsSoup.cpp
 
@@ -274,6 +277,8 @@ UIProcess/Launcher/glib/ProcessProviderGLib.cpp
 UIProcess/Launcher/glib/XDGDBusProxy.cpp
 
 UIProcess/Launcher/libwpe/ProcessProviderLibWPE.cpp
+
+UIProcess/Launcher/ohos/ProcessLauncherOHOS.cpp @no-unify
 
 UIProcess/Notifications/glib/NotificationService.cpp
 

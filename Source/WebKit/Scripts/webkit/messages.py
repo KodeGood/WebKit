@@ -1130,6 +1130,7 @@ def headers_for_type(type, for_implementation_file=False):
         'Inspector::SearchMatch': ['<WebCore/InspectorResourceUtilities.h>'],
         'Inspector::SearchResult': ['<WebCore/InspectorResourceUtilities.h>'],
         'IPC::AsyncReplyID': ['"Connection.h"'],
+        'IPC::OHOSBinderHandle': ['"ohos/ArgumentCodersOHOS.h"'],
         'IPC::Signal': ['"IPCEvent.h"'],
         'IPC::Semaphore': ['"IPCSemaphore.h"'],
         'IPC::StreamServerConnectionHandle': ['"StreamServerConnection.h"'],
