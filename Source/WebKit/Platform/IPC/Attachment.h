@@ -36,6 +36,7 @@
 #endif
 
 #if OS(OHOS)
+#include "ohos/OHOSBinder.h"
 #include <wtf/Variant.h>
 #include <wtf/ohos/RefPtrOHOS.h>
 #endif
@@ -55,7 +56,10 @@ struct Attachment { }; // Windows does not need attachments at the moment.
 #elif OS(ANDROID)
 using Attachment = Variant<UnixFileDescriptor, RefPtr<AHardwareBuffer>>;
 #elif OS(OHOS)
-using Attachment = Variant<UnixFileDescriptor, RefPtr<OH_NativeBuffer>>;
+// UnixFileDescriptor: an fd written into the parcel via OH_IPCParcel_WriteFileDescriptor.
+// RefPtr<OH_NativeBuffer>: a graphics buffer via OH_NativeBuffer_WriteToParcel.
+// OHOSBinderHandle: a binder endpoint via OH_IPCParcel_WriteRemoteStub (secondary connections).
+using Attachment = Variant<UnixFileDescriptor, RefPtr<OH_NativeBuffer>, OHOSBinderHandle>;
 #elif USE(UNIX_DOMAIN_SOCKETS)
 using Attachment = UnixFileDescriptor;
 #else

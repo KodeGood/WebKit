@@ -55,6 +55,11 @@
 #include "UnixMessage.h"
 #endif
 
+#if OS(OHOS)
+// Complete type for the RefPtr<OHOSReceiveContext> member destroyed in ~Connection.
+#include "ohos/OHOSReceiveContext.h"
+#endif
+
 namespace IPC {
 
 #if PLATFORM(COCOA)

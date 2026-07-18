@@ -29,7 +29,9 @@
 #include <wtf/Compiler.h>
 #include <wtf/Forward.h>
 
-#if USE(UNIX_DOMAIN_SOCKETS)
+#if OS(OHOS)
+#include "ohos/OHOSBinder.h"
+#elif USE(UNIX_DOMAIN_SOCKETS)
 #include <wtf/unix/UnixFileDescriptor.h>
 #elif OS(DARWIN)
 #include <mach/mach.h>
@@ -50,7 +52,20 @@ public:
     ConnectionHandle(const ConnectionHandle&) = delete;
     ConnectionHandle& operator=(const ConnectionHandle&) = delete;
 
-#if USE(UNIX_DOMAIN_SOCKETS)
+#if OS(OHOS)
+    // A transferable OHOS binder endpoint. On the producing side it wraps a stub
+    // (serialized via OH_IPCParcel_WriteRemoteStub); on the receiving side the coder
+    // materializes a proxy (OH_IPCParcel_ReadRemoteProxy). See ohos/ArgumentCodersOHOS.cpp.
+    ConnectionHandle(OHOSBinderHandle&& handle)
+        : m_handle(WTFMove(handle))
+    { }
+    ConnectionHandle(OHIPCRemoteStub* stub)
+        : m_handle(stub)
+    { }
+    explicit operator bool() const { return !!m_handle; }
+    OHIPCRemoteStub* stub() const { return m_handle.stub(); }
+    OHIPCRemoteProxy* releaseProxy() WARN_UNUSED_RETURN { return m_handle.releaseProxy(); }
+#elif USE(UNIX_DOMAIN_SOCKETS)
     ConnectionHandle(UnixFileDescriptor&& inHandle)
         : m_handle(WTFMove(inHandle))
     { }
@@ -73,7 +88,9 @@ public:
 private:
     friend struct IPC::ArgumentCoder<ConnectionHandle, void>;
 
-#if USE(UNIX_DOMAIN_SOCKETS)
+#if OS(OHOS)
+    OHOSBinderHandle m_handle;
+#elif USE(UNIX_DOMAIN_SOCKETS)
     UnixFileDescriptor m_handle;
 #elif OS(WINDOWS)
     Win32Handle m_handle;

@@ -31,15 +31,13 @@ namespace WTF {
 
 String logLevelString()
 {
-    const char* propertyValue = nullptr;
+    const char* logEnv = getenv("WEBKIT_DEBUG");
 
-    // TODO: Replace with OHOS equivalent when available.
-
-    // Disable all log channels if the property is unset or empty.
-    if (!propertyValue || !*propertyValue)
+    // Disable all log channels if WEBKIT_DEBUG is unset or empty.
+    if (!logEnv || !*logEnv)
         return makeString("-all"_s);
 
-    return String::fromLatin1(propertyValue);
+    return String::fromLatin1(logEnv);
 }
 
 } // namespace WTF

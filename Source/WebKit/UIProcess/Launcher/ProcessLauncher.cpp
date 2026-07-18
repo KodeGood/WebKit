@@ -35,6 +35,11 @@
 #include <mach/mach_traps.h>
 #endif
 
+#if OS(OHOS)
+#include <AbilityKit/native_child_process.h>
+#include <IPCKit/ipc_cremote_object.h>
+#endif
+
 namespace WebKit {
 
 ProcessLauncher::ProcessLauncher(Client* client, LaunchOptions&& launchOptions)
@@ -77,6 +82,15 @@ void ProcessLauncher::didFinishLaunchingProcess(ProcessID processIdentifier, IPC
         // FIXME: Release port rights/connections in the Connection::Identifier destructor.
         if (identifier.port)
             mach_port_mod_refs(mach_task_self(), identifier.port, MACH_PORT_RIGHT_RECEIVE, -1);
+#elif OS(OHOS)
+        // No client to adopt the connection: release the binder proxy and kill the
+        // orphaned child; nothing else will.
+        if (identifier.peerProxy)
+            OH_IPCRemoteProxy_Destroy(std::exchange(identifier.peerProxy, nullptr));
+        if (m_processID) {
+            OH_Ability_KillChildProcess(static_cast<int32_t>(m_processID));
+            m_processID = 0;
+        }
 #endif
         return;
     }

@@ -103,6 +103,10 @@ list(APPEND GPUProcess_SOURCES
 
 list(APPEND GPUProcess_INCLUDE_DIRECTORIES ${WebKit_PRIVATE_INCLUDE_DIRECTORIES})
 
+# On OHOS the child auxiliary processes load the single libWPEWebKit-2.0.so itself and run
+# its exported NativeChildProcess_OnConnect()/_MainProc() (Shared/ohos/OHOSChildProcessEntry.cpp,
+# compiled into WebKit via SourcesWPE.txt) — there are no separate child .so files.
+
 list(APPEND WebKit_UNIFIED_SOURCE_LIST_FILES
     "SourcesWPE.txt"
 )
@@ -447,6 +451,18 @@ list(APPEND WebKit_LIBRARIES
 
 if (ANDROID)
     list(APPEND WebKit_PRIVATE_LIBRARIES intl)
+endif ()
+
+if (OHOS)
+    # ConnectionOHOS transports IPC over binder (IPCKit) and marshals graphics buffers
+    # into parcels; ProcessLauncherOHOS spawns children via AbilityKit and reads the
+    # sandbox dirs from the ApplicationContext.
+    list(APPEND WebKit_LIBRARIES
+        OHOS::IPC
+        OHOS::ChildProcess
+        OHOS::AbilityRuntime
+        OHOS::NativeBuffer
+    )
 endif ()
 
 if (USE_ATK)

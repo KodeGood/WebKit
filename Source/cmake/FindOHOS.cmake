@@ -35,6 +35,12 @@ This module supports checking for the following components:
   The OH_NativeWindow_* ``libnative_window`` library.
 ``Log``
   The logging ``libhilog_ndk.z`` library.
+``IPC``
+  The OpenHarmony binder IPCKit ``libipc_capi`` library.
+``ChildProcess``
+  The AbilityKit native child process ``libchild_process`` library.
+``AbilityRuntime``
+  The AbilityKit application-context ``libability_runtime`` library.
 
 Imported Targets
 ^^^^^^^^^^^^^^^^
@@ -133,13 +139,28 @@ _OHOSDefineComponent(Log
     hilog/log.h
     OH_LOG_Print
 )
+_OHOSDefineComponent(IPC
+    ipc_capi
+    IPCKit/ipc_kit.h
+    OH_IPCParcel_Create
+)
+_OHOSDefineComponent(ChildProcess
+    child_process
+    AbilityKit/native_child_process.h
+    OH_Ability_CreateNativeChildProcess
+)
+_OHOSDefineComponent(AbilityRuntime
+    ability_runtime
+    AbilityKit/ability_runtime/application_context.h
+    OH_AbilityRuntime_ApplicationContextGetCacheDir
+)
 
 foreach (component IN LISTS OHOS_FIND_COMPONENTS)
     message(CHECK_START "Checking OHOS::${component}")
     list(APPEND CMAKE_MESSAGE_INDENT "  ")
     _OHOSHandleComponent(${component})
     list(POP_BACK CMAKE_MESSAGE_INDENT)
-    if (Android_${component}_FOUND)
+    if (OHOS_${component}_FOUND)
         message(CHECK_PASS "OK")
     else ()
         message(CHECK_FAIL "Failed")

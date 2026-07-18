@@ -21,6 +21,7 @@
 
 #if OS(OHOS)
 
+#include "OHOSBinder.h"
 #include <wtf/ArgumentCoder.h>
 #include <wtf/ohos/RefPtrOHOS.h>
 
@@ -30,6 +31,14 @@ template<> struct ArgumentCoder<RefPtr<OH_NativeBuffer>> {
     static void encode(Encoder&, const RefPtr<OH_NativeBuffer>&);
     static void encode(Encoder&, RefPtr<OH_NativeBuffer>&&);
     static std::optional<RefPtr<OH_NativeBuffer>> decode(Decoder&);
+};
+
+// A binder endpoint rides as a message attachment; ConnectionOHOS::sendOutgoingMessage
+// serializes it with OH_IPCParcel_WriteRemoteStub and the receive path materializes a
+// proxy with OH_IPCParcel_ReadRemoteProxy. Move-only, so only an rvalue encoder.
+template<> struct ArgumentCoder<OHOSBinderHandle> {
+    static void encode(Encoder&, OHOSBinderHandle&&);
+    static std::optional<OHOSBinderHandle> decode(Decoder&);
 };
 
 }

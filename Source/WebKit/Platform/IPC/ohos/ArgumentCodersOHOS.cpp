@@ -25,9 +25,20 @@
 #include "ArgumentCodersUnix.h"
 #include "Decoder.h"
 #include "Encoder.h"
+#include <IPCKit/ipc_cremote_object.h>
 #include <wtf/unix/UnixFileDescriptor.h>
 
 namespace IPC {
+
+void OHOSBinderHandle::reset()
+{
+    if (m_proxy) {
+        OH_IPCRemoteProxy_Destroy(m_proxy);
+        m_proxy = nullptr;
+    }
+    // m_stub is borrowed from the hosting Connection and is never destroyed here.
+    m_stub = nullptr;
+}
 
 std::optional<UnixFileDescriptor> ArgumentCoder<UnixFileDescriptor>::decode(Decoder& decoder)
 {
@@ -53,6 +64,20 @@ std::optional<RefPtr<OH_NativeBuffer>> ArgumentCoder<RefPtr<OH_NativeBuffer>>::d
     if (auto attachment = decoder.takeLastAttachment()) {
         if (holdsAlternative<RefPtr<OH_NativeBuffer>>(attachment.value()))
             return { WTFMove(get<RefPtr<OH_NativeBuffer>>(attachment.value())) };
+    }
+    return std::nullopt;
+}
+
+void ArgumentCoder<OHOSBinderHandle>::encode(Encoder& encoder, OHOSBinderHandle&& handle)
+{
+    encoder.addAttachment(WTFMove(handle));
+}
+
+std::optional<OHOSBinderHandle> ArgumentCoder<OHOSBinderHandle>::decode(Decoder& decoder)
+{
+    if (auto attachment = decoder.takeLastAttachment()) {
+        if (holdsAlternative<OHOSBinderHandle>(attachment.value()))
+            return { WTFMove(get<OHOSBinderHandle>(attachment.value())) };
     }
     return std::nullopt;
 }

@@ -171,6 +171,22 @@ private:
     void finishLaunchingProcess(ASCIILiteral name);
     void didFinishLaunchingProcess(ProcessID, IPC::Connection::Identifier&&);
 
+#if OS(OHOS)
+    // Binder-thread callbacks for OH_Ability_CreateNativeChildProcess (no user pointer, so
+    // one static trampoline per role). They run the env handshake and re-dispatch to the
+    // launch run loop. Defined in Launcher/ohos/ProcessLauncherOHOS.cpp; static members so
+    // they can reach didFinishLaunchingProcess()/m_processID.
+    static void onWebProcessStarted(int errCode, OHIPCRemoteProxy*);
+    static void onNetworkProcessStarted(int errCode, OHIPCRemoteProxy*);
+#if ENABLE(GPU_PROCESS)
+    static void onGPUProcessStarted(int errCode, OHIPCRemoteProxy*);
+#endif
+    static void handleChildStarted(ProcessType, int errCode, OHIPCRemoteProxy*);
+    // Issues the next queued spawn for the type if none is awaiting its started-callback
+    // (same-type spawns are serialized so the userData-less callbacks correlate by FIFO).
+    static void spawnNextLaunch(ProcessType);
+#endif
+
     void platformInvalidate();
     void platformDestroy();
 

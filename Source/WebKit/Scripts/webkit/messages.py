@@ -953,6 +953,7 @@ def headers_for_type(type, for_implementation_file=False):
         'Inspector::FrontendChannel::ConnectionType': ['<JavaScriptCore/InspectorFrontendChannel.h>'],
         'Inspector::InspectorTargetType': ['<JavaScriptCore/InspectorTarget.h>'],
         'IPC::AsyncReplyID': ['"Connection.h"'],
+        'IPC::OHOSBinderHandle': ['"ohos/ArgumentCodersOHOS.h"'],
         'IPC::Signal': ['"IPCEvent.h"'],
         'IPC::Semaphore': ['"IPCSemaphore.h"'],
         'IPC::StreamServerConnectionHandle': ['"StreamServerConnection.h"'],

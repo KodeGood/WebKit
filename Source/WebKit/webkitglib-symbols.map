@@ -3,6 +3,10 @@ global:
   jsc_*;
   webkit_*;
   wpe_*;
+  /* OHOS native child-process entry points, dlsym'd by AbilityKit in the child (which loads
+     libWPEWebKit itself). Absent on non-OHOS builds; listing them here is harmless. */
+  NativeChildProcess_OnConnect;
+  NativeChildProcess_MainProc;
   extern "C++" {
     "WebKit::GPUProcessMain(int, char**)";
     "WebKit::NetworkProcessMain(int, char**)";

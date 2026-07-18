@@ -27,6 +27,10 @@
 #include "config.h"
 #include "ProcessLauncher.h"
 
+// OHOS uses a dedicated binder launcher (UIProcess/Launcher/ohos/ProcessLauncherOHOS.cpp);
+// this GLib/socket launcher is not compiled for OS(OHOS).
+#if !OS(OHOS)
+
 #include "BubblewrapLauncher.h"
 #include "Connection.h"
 #include "FlatpakLauncher.h"
@@ -307,3 +311,5 @@ void ProcessLauncher::platformInvalidate()
 }
 
 } // namespace WebKit
+
+#endif // !OS(OHOS)

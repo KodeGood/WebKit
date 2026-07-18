@@ -26,6 +26,13 @@
  */
 
 #include "config.h"
+
+// OHOS transports IPC over OpenHarmony binder (IPCKit), not Unix domain sockets.
+// It provides its own Connection implementation in Platform/IPC/ohos/ConnectionOHOS.cpp,
+// so this Unix-socket backend is excluded from the OHOS build even though OHOS is a
+// USE(UNIX_DOMAIN_SOCKETS) platform (it keeps the shared SharedMemory/coder plumbing).
+#if !OS(OHOS)
+
 #include "Connection.h"
 
 #include "IPCUtilities.h"
@@ -1065,3 +1072,5 @@ pid_t readPIDFromPeer(int socket)
 } // namespace IPC
 
 WTF_ALLOW_UNSAFE_BUFFER_USAGE_END
+
+#endif // !OS(OHOS)

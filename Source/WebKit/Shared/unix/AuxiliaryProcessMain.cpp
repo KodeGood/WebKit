@@ -38,7 +38,41 @@
 #include "unix/BreakpadExceptionHandler.h"
 #endif
 
+#if OS(OHOS)
+#include "ohos/WebKitOHOSProcessEntry.h"
+#include <utility>
+#include <wtf/Lock.h>
+#include <wtf/NeverDestroyed.h>
+#endif
+
 namespace WebKit {
+
+#if OS(OHOS)
+// The child's binder receive stub, produced by webkit_ohos_create_connection_stub() and
+// consumed once by parseCommandLine() to build the client Connection.
+static Lock& ohosConnectionStubLock()
+{
+    static NeverDestroyed<Lock> lock;
+    return lock.get();
+}
+static OHIPCRemoteStub*& ohosConnectionStubStorage()
+{
+    static OHIPCRemoteStub* stub { nullptr };
+    return stub;
+}
+
+void setOHOSConnectionStub(OHIPCRemoteStub* stub)
+{
+    Locker locker { ohosConnectionStubLock() };
+    ohosConnectionStubStorage() = stub;
+}
+
+OHIPCRemoteStub* takeOHOSConnectionStub()
+{
+    Locker locker { ohosConnectionStubLock() };
+    return std::exchange(ohosConnectionStubStorage(), nullptr);
+}
+#endif
 
 AuxiliaryProcessMainCommon::AuxiliaryProcessMainCommon()
 {
@@ -54,6 +88,21 @@ WTF_ALLOW_UNSAFE_BUFFER_USAGE_END
 {
     int argIndex = 1; // Start from argv[1], since argv[0] is the program name.
 
+#if OS(OHOS)
+    // OHOS passes only the process identifier on the command line; the binder receive
+    // endpoint (the child's stub) is created by webkit_ohos_create_connection_stub()
+    // during the bootstrap handshake and adopted here before the process main runs.
+    if (argc < argIndex + 1)
+        return false;
+
+    auto processIdentifier = parseInteger<uint64_t>(unsafeSpan(argv[argIndex++]));
+    if (!processIdentifier || !ObjectIdentifier<WebCore::ProcessIdentifierType>::isValidIdentifier(*processIdentifier))
+        return false;
+    m_parameters.processIdentifier = ObjectIdentifier<WebCore::ProcessIdentifierType>(*processIdentifier);
+    m_parameters.connectionIdentifier = IPC::Connection::Identifier { takeOHOSConnectionStub() };
+    if (!m_parameters.processIdentifier->toRawValue() || !m_parameters.connectionIdentifier)
+        return false;
+#else
     // Ensure we have enough arguments for processIdentifier and connectionIdentifier
     if (argc < argIndex + 2)
         return false;
@@ -93,6 +142,7 @@ WTF_ALLOW_UNSAFE_BUFFER_USAGE_END
             JSC::Config::configureForTesting();
     }
 #endif
+#endif // OS(OHOS)
 
     return true;
 }
