@@ -51,6 +51,14 @@ WPE_API OH_NativeBuffer   *wpe_buffer_ohos_get_native_buffer   (WPEBufferOHOS *b
 
 WPE_API guint32            wpe_buffer_ohos_get_format          (WPEBufferOHOS *buffer);
 
+/* Explicit GPU sync fences (sync_file fds, EGL_ANDROID_native_fence_sync). Ownership transfers
+ * on set; take returns the fd (or -1) and clears it. Rendering fence: producer -> consumer, wait
+ * before sampling. Release fence: consumer -> producer, wait before reusing the buffer. */
+WPE_API void               wpe_buffer_ohos_set_rendering_fence (WPEBufferOHOS *buffer, int fenceFD);
+WPE_API int                wpe_buffer_ohos_take_rendering_fence(WPEBufferOHOS *buffer);
+WPE_API void               wpe_buffer_ohos_set_release_fence   (WPEBufferOHOS *buffer, int fenceFD);
+WPE_API int                wpe_buffer_ohos_take_release_fence  (WPEBufferOHOS *buffer);
+
 G_END_DECLS
 
 #endif /* !__GI_SCANNER__ */

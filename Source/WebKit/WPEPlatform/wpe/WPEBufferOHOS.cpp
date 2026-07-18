@@ -31,6 +31,7 @@
 #include <epoxy/egl.h>
 #include <native_buffer/native_buffer.h>
 #include <native_window/external_window.h>
+#include <unistd.h>
 #include <wtf/glib/GUniquePtr.h>
 #include <wtf/glib/WTFGType.h>
 #include <wtf/unix/UnixFileDescriptor.h>
@@ -42,7 +43,16 @@
 struct _WPEBufferOHOSPrivate {
     OH_NativeBuffer* onb;
     EGLImage eglImage { EGL_NO_IMAGE };
+    int renderingFenceFD { -1 };
+    int releaseFenceFD { -1 };
 };
+
+static void closeFenceFD(int& fd)
+{
+    if (fd >= 0)
+        close(fd);
+    fd = -1;
+}
 WEBKIT_DEFINE_FINAL_TYPE(WPEBufferOHOS, wpe_buffer_ohos, WPE_TYPE_BUFFER, WPEBuffer)
 
 static std::function<EGLImage(EGLDisplay, OH_NativeBuffer*)> s_createImage = nullptr;
@@ -87,6 +97,8 @@ static void wpeBufferOHOSDispose(GObject* object)
 
     wpeBufferOHOSDisposeEGLImageIfNeeded(ohosBuffer);
     g_clear_pointer(&ohosBuffer->priv->onb, OH_NativeBuffer_Unreference);
+    closeFenceFD(ohosBuffer->priv->renderingFenceFD);
+    closeFenceFD(ohosBuffer->priv->releaseFenceFD);
 
     G_OBJECT_CLASS(wpe_buffer_ohos_parent_class)->dispose(object);
 }
@@ -233,5 +245,31 @@ guint32 wpe_buffer_ohos_get_format(WPEBufferOHOS* buffer)
 
     RELEASE_ASSERT_NOT_REACHED();
     return 0;
+}
+
+void wpe_buffer_ohos_set_rendering_fence(WPEBufferOHOS* buffer, int fenceFD)
+{
+    g_return_if_fail(WPE_IS_BUFFER_OHOS(buffer));
+    closeFenceFD(buffer->priv->renderingFenceFD);
+    buffer->priv->renderingFenceFD = fenceFD;
+}
+
+int wpe_buffer_ohos_take_rendering_fence(WPEBufferOHOS* buffer)
+{
+    g_return_val_if_fail(WPE_IS_BUFFER_OHOS(buffer), -1);
+    return std::exchange(buffer->priv->renderingFenceFD, -1);
+}
+
+void wpe_buffer_ohos_set_release_fence(WPEBufferOHOS* buffer, int fenceFD)
+{
+    g_return_if_fail(WPE_IS_BUFFER_OHOS(buffer));
+    closeFenceFD(buffer->priv->releaseFenceFD);
+    buffer->priv->releaseFenceFD = fenceFD;
+}
+
+int wpe_buffer_ohos_take_release_fence(WPEBufferOHOS* buffer)
+{
+    g_return_val_if_fail(WPE_IS_BUFFER_OHOS(buffer), -1);
+    return std::exchange(buffer->priv->releaseFenceFD, -1);
 }
 #endif // OS(OHOS)

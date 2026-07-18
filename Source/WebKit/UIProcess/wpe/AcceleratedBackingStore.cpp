@@ -159,6 +159,10 @@ void AcceleratedBackingStore::frame(uint64_t bufferID, Rects&& damageRects, WTF:
     if (wpe_display_use_explicit_sync(wpe_view_get_display(m_wpeView.get()))) {
         if (WPE_IS_BUFFER_DMA_BUF(m_pendingBuffer.get()))
             wpe_buffer_dma_buf_set_rendering_fence(WPE_BUFFER_DMA_BUF(m_pendingBuffer.get()), renderingFenceFD.release());
+#if OS(OHOS)
+        else if (WPE_IS_BUFFER_OHOS(m_pendingBuffer.get()))
+            wpe_buffer_ohos_set_rendering_fence(WPE_BUFFER_OHOS(m_pendingBuffer.get()), renderingFenceFD.release());
+#endif
         renderPendingBuffer();
     } else
         m_fenceMonitor.addFileDescriptor(WTFMove(renderingFenceFD));
@@ -200,6 +204,10 @@ void AcceleratedBackingStore::bufferReleased(WPEBuffer* buffer)
         UnixFileDescriptor releaseFence;
         if (WPE_IS_BUFFER_DMA_BUF(buffer))
             releaseFence = UnixFileDescriptor { wpe_buffer_dma_buf_take_release_fence(WPE_BUFFER_DMA_BUF(buffer)), UnixFileDescriptor::Adopt };
+#if OS(OHOS)
+        else if (WPE_IS_BUFFER_OHOS(buffer))
+            releaseFence = UnixFileDescriptor { wpe_buffer_ohos_take_release_fence(WPE_BUFFER_OHOS(buffer)), UnixFileDescriptor::Adopt };
+#endif
 
         if (RefPtr legacyMainFrameProcess = m_legacyMainFrameProcess.get())
             legacyMainFrameProcess->send(Messages::AcceleratedSurface::ReleaseBuffer(id, WTFMove(releaseFence)), m_surfaceID);

@@ -389,6 +389,7 @@ AcceleratedSurface::RenderTargetEGLImage::RenderTargetEGLImage(uint64_t surfaceI
 
 void AcceleratedSurface::RenderTargetEGLImage::didRenderFrame(Vector<WebCore::IntRect, 1>&& damageRects)
 {
+    // Submit the render and the fence sync() created; the consumer waits it before sampling.
     glFlush();
     RenderTargetShareableBuffer::didRenderFrame(WTFMove(damageRects));
 }
