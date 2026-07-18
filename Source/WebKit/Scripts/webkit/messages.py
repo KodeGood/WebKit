@@ -1121,6 +1121,7 @@ def headers_for_type(type, for_implementation_file=False):
         'Inspector::InspectorTargetType': ['<JavaScriptCore/InspectorTarget.h>'],
         'Inspector::ResourceType': ['<WebCore/InspectorResourceType.h>'],
         'IPC::AsyncReplyID': ['"Connection.h"'],
+        'IPC::OHOSBinderHandle': ['"ohos/ArgumentCodersOHOS.h"'],
         'IPC::Signal': ['"IPCEvent.h"'],
         'IPC::Semaphore': ['"IPCSemaphore.h"'],
         'IPC::StreamServerConnectionHandle': ['"StreamServerConnection.h"'],

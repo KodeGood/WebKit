@@ -22,7 +22,10 @@
 
 webkit_platform_header: "ConnectionHandle.h"
 [CustomHeader, RValue, WebKitPlatform] class IPC::ConnectionHandle {
-#if USE(UNIX_DOMAIN_SOCKETS)
+#if OS(OHOS)
+    IPC::OHOSBinderHandle m_handle;
+#endif
+#if USE(UNIX_DOMAIN_SOCKETS) && !OS(OHOS)
     UnixFileDescriptor m_handle;
 #endif
 #if OS(WINDOWS)

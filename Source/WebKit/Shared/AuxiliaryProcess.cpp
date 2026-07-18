@@ -140,7 +140,7 @@ void AuxiliaryProcess::initializeProcessName(const AuxiliaryProcessInitializatio
 
 void AuxiliaryProcess::initializeConnection(IPC::Connection* connection)
 {
-#if OS(LINUX) && USE(GLIB)
+#if OS(LINUX) && USE(GLIB) && !OS(OHOS)
     // When bubblewrap sandbox is used isInsideFlatpak() also returns true in the web process.
     if (isInsideFlatpak())
         connection->sendCredentials();
