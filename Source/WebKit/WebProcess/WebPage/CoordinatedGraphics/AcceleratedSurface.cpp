@@ -156,6 +156,22 @@ WTF_MAKE_TZONE_ALLOCATED_IMPL(AcceleratedSurface::RenderTargetShareableBuffer);
 AcceleratedSurface::RenderTargetShareableBuffer::RenderTargetShareableBuffer(uint64_t surfaceID, const IntSize& size)
     : RenderTarget(surfaceID)
 {
+#if OS(OHOS)
+    // Workaround for the Oniro + Volla X23 (libhybris/Mali) bring-up.
+    //
+    // GL is resolved through eglGetProcAddress there (apps can't dlopen the impl
+    // libs). If a rendering entry point is the first thing epoxy resolves, the
+    // resolver's nested GL-version query mis-fires and the call lands on the
+    // platformsdk wrapper's no-context path (-> logNoContextCall crash). Priming
+    // one GLES2 name + the GL version up front avoids that. Inert on stock
+    // OpenHarmony, so gated on OS(OHOS) rather than a Volla-specific flag.
+    static bool s_epoxyPrimed = false;
+    if (!s_epoxyPrimed) {
+        (void)eglGetProcAddress("glGenFramebuffers");
+        (void)epoxy_gl_version();
+        s_epoxyPrimed = true;
+    }
+#endif
     glGenFramebuffers(1, &m_fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 
