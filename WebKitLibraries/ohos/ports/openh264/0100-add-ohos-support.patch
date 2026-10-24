@@ -1,0 +1,20 @@
+--- a/meson.build
++++ b/meson.build
+@@ -57,7 +57,7 @@
+ libm_dep = cpp.find_library('m', required : false)
+ deps += [libm_dep]
+ 
+-if ['linux', 'android', 'ios', 'darwin', 'freebsd', 'netbsd', 'openbsd'].contains(system)
++if ['linux', 'android', 'ios', 'darwin', 'freebsd', 'netbsd', 'openbsd', 'ohos'].contains(system)
+   asm_format32 = 'elf'
+   asm_format64 = 'elf64'
+   if ['ios', 'darwin'].contains(system)
+@@ -109,7 +109,7 @@
+     error('FIXME: unhandled CPU family @0@ for @1@'.format(cpu_family, system))
+   endif
+ 
+-  if ['ios', 'darwin', 'android', 'freebsd', 'openbsd'].contains(system)
++  if ['ios', 'darwin', 'android', 'freebsd', 'openbsd', 'ohos'].contains(system)
+     cpp_lib = '-lc++'
+   endif
+ elif system == 'windows'
