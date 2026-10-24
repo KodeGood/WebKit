@@ -1,0 +1,166 @@
+From da2cd2f2e3a655a952ce36a894b19d6729ea90e3 Mon Sep 17 00:00:00 2001
+From: Jani Hautakangas <jani@kodegood.com>
+Date: Sat, 6 Sep 2025 20:41:02 +0300
+Subject: [PATCH] Add support for OpenHarmony
+
+---
+ meson.build           |  2 +-
+ registry/egl.xml      | 10 ++++++++++
+ src/dispatch_common.c | 40 +++++++++++++++++++++++++++++++++++++---
+ 3 files changed, 48 insertions(+), 4 deletions(-)
+
+diff --git a/meson.build b/meson.build
+index e1d8d8b..dacf967 100644
+--- a/meson.build
++++ b/meson.build
+@@ -36,7 +36,7 @@ conf.set('HAVE_KHRPLATFORM_H', cc.has_header('KHR/khrplatform.h'))
+ # support on Linux and Unix
+ enable_glx = get_option('glx')
+ if enable_glx == 'auto'
+-  build_glx = not ['windows', 'darwin', 'android', 'haiku'].contains(host_system)
++  build_glx = not ['windows', 'darwin', 'android', 'haiku', 'ohos'].contains(host_system)
+ else
+   build_glx = enable_glx == 'yes'
+ endif
+diff --git a/registry/egl.xml b/registry/egl.xml
+index c27f172..e441820 100644
+--- a/registry/egl.xml
++++ b/registry/egl.xml
+@@ -1003,6 +1003,11 @@
+             <unused start="0x3491" end="0x349F"/>
+     </enums>
+ 
++    <enums namespace="EGL" start="0x34E0" end="0x34E1" vendor="Huawei" comment="Unofficial OpenHarmony enums">
++        <enum value="0x34E0" name="EGL_PLATFORM_OHOS_KHR"/>
++        <enum value="0x34E1" name="EGL_NATIVE_BUFFER_OHOS"/>
++    </enums>
++
+ <!-- Please remember that new enumerant allocations must be obtained by
+      request to the Khronos API registrar (see comments at the top of this
+      file) File requests in the Khronos Bugzilla, EGL project, Registry
+@@ -3278,5 +3283,10 @@
+                 <enum name="EGL_Y_AXIS_NV"/>
+             </require>
+         </extension>
++        <extension name="EGL_OHOS_image_native_buffer" supported="egl">
++            <require>
++                <enum name="EGL_NATIVE_BUFFER_OHOS"/>
++            </require>
++        </extension>
+     </extensions>
+ </registry>
+diff --git a/src/dispatch_common.c b/src/dispatch_common.c
+index 153eb7c..1c9de78 100644
+--- a/src/dispatch_common.c
++++ b/src/dispatch_common.c
+@@ -114,7 +114,7 @@
+  *      3.6. To perform the dynamic query, libGL also must export an entry
+  *           point called
+  *
+- *           void (*glXGetProcAddressARB(const GLubyte *))(); 
++ *           void (*glXGetProcAddressARB(const GLubyte *))();
+  *
+  *      The full specification of this function is available separately. It
+  *      takes the string name of a GL or GLX entry point and returns a pointer
+@@ -183,6 +183,17 @@
+ #define EGL_LIB "libEGL.so"
+ #define GLES1_LIB "libGLESv1_CM.so"
+ #define GLES2_LIB "libGLESv2.so"
++#elif defined(__OHOS__)
++// Oniro/libhybris: 3rd-party apps can only dlopen the platformsdk NDK libs
++// (libGLESv3.so / libEGL.so); the internal impl shims are namespace-blocked.
++// The platformsdk GL wrapper dispatches GL via a no-context hook table on
++// offscreen/compositor threads (-> logNoContextCall), so GL is resolved through
++// eglGetProcAddress (which the wrapper backs with the driver via the hybris
++// shim it loads in its own namespace). NOTE: diverges from official OHOS.
++#define GLX_LIB "libGLESv2.so"
++#define EGL_LIB "libEGL.so"
++#define GLES1_LIB "libGLESv1_CM.so"
++#define GLES2_LIB "libGLESv3.so"
+ #elif defined(_WIN32)
+ #define EGL_LIB "libEGL.dll"
+ #define GLES1_LIB "libGLES_CM.dll"
+@@ -705,23 +716,31 @@ epoxy_gl_dlsym(const char *name)
+ void *
+ epoxy_gles1_dlsym(const char *name)
+ {
++#ifdef __OHOS__
++    return epoxy_get_proc_address(name);
++#else
+     if (epoxy_current_context_is_glx()) {
+         return epoxy_get_proc_address(name);
+     } else {
+         get_dlopen_handle(&api.gles1_handle, GLES1_LIB, true, true);
+         return do_dlsym(&api.gles1_handle, name, true);
+     }
++#endif
+ }
+ 
+ void *
+ epoxy_gles2_dlsym(const char *name)
+ {
++#ifdef __OHOS__
++    return epoxy_get_proc_address(name);
++#else
+     if (epoxy_current_context_is_glx()) {
+         return epoxy_get_proc_address(name);
+     } else {
+         get_dlopen_handle(&api.gles2_handle, GLES2_LIB, true, true);
+         return do_dlsym(&api.gles2_handle, name, true);
+     }
++#endif
+ }
+ 
+ /**
+@@ -737,6 +756,9 @@ epoxy_gles2_dlsym(const char *name)
+ void *
+ epoxy_gles3_dlsym(const char *name)
+ {
++#ifdef __OHOS__
++    return epoxy_get_proc_address(name);
++#else
+     if (epoxy_current_context_is_glx()) {
+         return epoxy_get_proc_address(name);
+     } else {
+@@ -749,6 +771,7 @@ epoxy_gles3_dlsym(const char *name)
+ 
+         return epoxy_get_proc_address(name);
+     }
++#endif
+ }
+ 
+ /**
+@@ -760,10 +783,10 @@ epoxy_get_core_proc_address(const char *name, int core_version)
+ {
+ #ifdef _WIN32
+     int core_symbol_support = 11;
+-#elif defined(__ANDROID__)
++#elif defined(__ANDROID__) || defined(__OHOS__)
+     /**
+      * All symbols must be resolved through eglGetProcAddress
+-     * on Android
++     * on Android and OpenHarmony
+      */
+     int core_symbol_support = 0;
+ #else
+@@ -847,6 +870,17 @@ epoxy_get_bootstrap_proc_address(const char *name)
+ void *
+ epoxy_get_proc_address(const char *name)
+ {
++#if defined(__OHOS__)
++    /*
++     * On OpenHarmony always resolve through eglGetProcAddress. The generic path
++     * below gates the eglGetProcAddress call on eglQueryContext(EGL_CONTEXT_CLIENT_TYPE)
++     * returning EGL_OPENGL(_ES)_API; on some boards that query fails (invalid
++     * display), which would drop us into a dlsym fallback that returns the
++     * platformsdk GL wrapper's hook-table entry points (no-context -> crash).
++     * eglGetProcAddress itself returns usable, context-honouring entry points.
++     */
++    return eglGetProcAddress(name);
++#endif
+ #if PLATFORM_HAS_EGL
+     GLenum egl_api = EGL_NONE;
+ 
+-- 
+2.51.0
+

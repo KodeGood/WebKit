@@ -1,0 +1,33 @@
+From: vcpkg migration
+Subject: [PATCH] Use the dlopen-based loader even for a static libwpe
+
+libwpe selects src/loader-static.c when default_library != 'shared'. The
+static loader references an external `_wpe_loader_interface` struct that a
+backend statically linked into the final binary is expected to provide. In
+the OpenHarmony build libwpe is built static (so it folds into the shared
+libWPEWebKit-2.0.so) and the WPE backend is the WPEPlatform OpenHarmony
+backend, which uses the WPEPlatform API rather than the legacy
+`wpe_loader_interface` protocol — so nothing defines `_wpe_loader_interface`
+and the final link fails with an undefined symbol.
+
+The dlopen-based loader (src/loader.c) references the backend only by name
+via dlsym at runtime, so it links cleanly and matches how a shared libwpe
+behaves. Force it unconditionally.
+---
+ meson.build | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/meson.build b/meson.build
+index 0000000..1111111 100644
+--- a/meson.build
++++ b/meson.build
+@@ -99,7 +99,7 @@
+ 	'src/renderer-backend-egl.c',
+ 	'src/renderer-host.c',
+ 	'src/version.c',
+ 	'src/view-backend.c',
+-	get_option('default_library') == 'shared' ? 'src/loader.c' : 'src/loader-static.c',
++	'src/loader.c',
+ 	install: true,
+ 	dependencies: dependencies,
+ 	version: soversion,

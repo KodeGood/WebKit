@@ -1,0 +1,155 @@
+Add OpenHarmony (OHOS) support to meson.
+
+Teaches meson about the 'ohos' host system so it behaves like Android where appropriate.
+
+The critical part for this project: OpenHarmony (like Android) does not support versioned
+sonames, and the OHOS HAP packager only accepts plain lib*.so files. Without this, meson emits
+libfoo.so.0.x with a versioned SONAME, breaking packaging and the consumer's unversioned
+link/runtime expectations. is_ohos() now gates the unversioned filename_tpl and skips
+ltversion/soversion, mirroring the Android path.
+
+---
+diff --git a/mesonbuild/build.py b/mesonbuild/build.py
+index b435320..2c84ac6 100644
+--- a/mesonbuild/build.py
++++ b/mesonbuild/build.py
+@@ -1264,6 +1264,8 @@ class BuildTarget(Target):
+             # Executables must be PIE on Android
+             if self.environment.machines[self.for_machine].is_android():
+                 self.pie = True
++            elif self.environment.machines[self.for_machine].is_ohos():
++                self.pie = True
+             else:
+                 self.pie = self._extract_pic_pie(kwargs, 'pie', 'b_pie')
+         self.implicit_include_directories = kwargs.get('implicit_include_directories', True)
+@@ -1756,6 +1758,8 @@ class BuildTarget(Target):
+                     # be linked before they can be dlopen()ed in the correct order. Not doing so
+                     # leads to a missing symbol error: https://github.com/android/ndk/issues/201
+                     link_target.force_soname = True
++                elif self.environment.machines[self.for_machine].is_ohos() and isinstance(self, SharedModule):
++                    link_target.force_soname = True
+                 else:
+                     mlog.deprecation(f'target {self.name} links against shared module {link_target.name}, which is incorrect.'
+                                      '\n             '
+@@ -2542,6 +2546,11 @@ class SharedLibrary(BuildTarget):
+             suffix = 'so'
+             # Android doesn't support shared_library versioning
+             self.filename_tpl = '{0.prefix}{0.name}.{0.suffix}'
++        elif self.environment.machines[self.for_machine].is_ohos():
++            prefix = 'lib'
++            suffix = 'so'
++            # OpenHarmony doesn't support shared_library versioning
++            self.filename_tpl = '{0.prefix}{0.name}.{0.suffix}'
+         else:
+             prefix = 'lib'
+             suffix = 'so'
+@@ -2570,7 +2579,8 @@ class SharedLibrary(BuildTarget):
+     def process_kwargs(self, kwargs):
+         super().process_kwargs(kwargs)
+ 
+-        if not self.environment.machines[self.for_machine].is_android():
++        if (not self.environment.machines[self.for_machine].is_android() and
++                not self.environment.machines[self.for_machine].is_ohos()):
+             # Shared library version
+             self.ltversion = T.cast('T.Optional[str]', kwargs.get('version'))
+             self.soversion = T.cast('T.Optional[str]', kwargs.get('soversion'))
+diff --git a/mesonbuild/cmake/toolchain.py b/mesonbuild/cmake/toolchain.py
+index 20c0082..f718acf 100644
+--- a/mesonbuild/cmake/toolchain.py
++++ b/mesonbuild/cmake/toolchain.py
+@@ -150,6 +150,7 @@ class CMakeToolchain:
+             'windows': 'Windows',
+             'freebsd': 'FreeBSD',
+             'darwin': 'Darwin',
++            'ohos': 'OHOS',
+         }
+ 
+         # Only set these in a cross build. Otherwise CMake will trip up in native
+diff --git a/mesonbuild/dependencies/dev.py b/mesonbuild/dependencies/dev.py
+index 8f0f1ba..520acef 100644
+--- a/mesonbuild/dependencies/dev.py
++++ b/mesonbuild/dependencies/dev.py
+@@ -536,7 +536,7 @@ class ZlibSystemDependency(SystemDependency):
+         # I'm not sure this is entirely correct. What if we're cross compiling
+         # from something to macOS?
+         if ((m.is_darwin() and isinstance(self.clib_compiler, (AppleClangCCompiler, AppleClangCPPCompiler))) or
+-                m.is_freebsd() or m.is_dragonflybsd() or m.is_android()):
++                m.is_freebsd() or m.is_dragonflybsd() or m.is_android() or m.is_ohos()):
+             # No need to set includes,
+             # on macos xcode/clang will do that for us.
+             # on freebsd zlib.h is in /usr/include
+diff --git a/mesonbuild/dependencies/qt.py b/mesonbuild/dependencies/qt.py
+index 8bb269e..d11ddd0 100644
+--- a/mesonbuild/dependencies/qt.py
++++ b/mesonbuild/dependencies/qt.py
+@@ -92,6 +92,18 @@ def _get_modules_lib_suffix(version: str, info: 'MachineInfo', is_debug: bool) -
+             else:
+                 mlog.warning(f'Android target arch "{info.cpu_family}"" for Qt5 is unknown, '
+                              'module detection may not work')
++        elif info.is_ohos():
++            if info.cpu_family == 'x86':
++                suffix += '_x86'
++            elif info.cpu_family == 'x86_64':
++                suffix += '_x86_64'
++            elif info.cpu_family == 'arm':
++                suffix += '_armeabi-v7a'
++            elif info.cpu_family == 'aarch64':
++                suffix += '_arm64-v8a'
++            else:
++                mlog.warning(f'OpenHarmony target arch "{info.cpu_family}"" for Qt5 is unknown, '
++                             'module detection may not work')
+     return suffix
+ 
+ 
+diff --git a/mesonbuild/envconfig.py b/mesonbuild/envconfig.py
+index 43fad0c..4f198ed 100644
+--- a/mesonbuild/envconfig.py
++++ b/mesonbuild/envconfig.py
+@@ -330,6 +330,12 @@ class MachineInfo(HoldableObject):
+         """
+         return self.system == 'android'
+ 
++    def is_ohos(self) -> bool:
++        """
++        Machine is OpenHarmony?
++        """
++        return self.system == 'ohos'
++
+     def is_haiku(self) -> bool:
+         """
+         Machine is Haiku?
+diff --git a/mesonbuild/environment.py b/mesonbuild/environment.py
+index 489ef50..9acf8d8 100644
+--- a/mesonbuild/environment.py
++++ b/mesonbuild/environment.py
+@@ -494,6 +494,7 @@ KERNEL_MAPPINGS: T.Mapping[str, str] = {'freebsd': 'freebsd',
+                                         'windows': 'nt',
+                                         'android': 'linux',
+                                         'linux': 'linux',
++                                        'ohos': 'linux',
+                                         'cygwin': 'nt',
+                                         'darwin': 'xnu',
+                                         'ios': 'xnu',
+diff --git a/mesonbuild/utils/universal.py b/mesonbuild/utils/universal.py
+index 0628310..e9df0bc 100644
+--- a/mesonbuild/utils/universal.py
++++ b/mesonbuild/utils/universal.py
+@@ -114,6 +114,7 @@ __all__ = [
+     'has_path_sep',
+     'is_aix',
+     'is_android',
++    'is_ohos',
+     'is_ascii_string',
+     'is_cygwin',
+     'is_debianlike',
+@@ -635,6 +636,10 @@ def is_android() -> bool:
+     return platform.system().lower() == 'android'
+ 
+ 
++def is_ohos() -> bool:
++    return platform.system().lower() == 'ohos'
++
++
+ def is_haiku() -> bool:
+     return platform.system().lower() == 'haiku'
+ 
