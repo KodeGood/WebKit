@@ -187,9 +187,16 @@ public:
     void clear();
 
     // Useful when the key type is WeakPtr
-    size_t computeSize() const requires (ValueTraits::hasIsWeakNullValueFunction);
-    bool isEmptyIgnoringNullReferences() const requires (ValueTraits::hasIsWeakNullValueFunction);
-    void removeWeakNullEntries() requires (ValueTraits::hasIsWeakNullValueFunction);
+    // Member templates defined in the class, for Clang 15: it can't look up ValueTraits in the
+    // trailing requires-clause of an out-of-line definition, and it evaluates the requires-clause
+    // of a non-template member when the class is instantiated, which instantiates HashTraits<T>
+    // before a later explicit specialization of it.
+    template<typename Traits = ValueTraits>
+    size_t computeSize() const requires (Traits::hasIsWeakNullValueFunction) { return m_impl.computeSize(); }
+    template<typename Traits = ValueTraits>
+    bool isEmptyIgnoringNullReferences() const requires (Traits::hasIsWeakNullValueFunction) { return m_impl.isEmptyIgnoringNullReferences(); }
+    template<typename Traits = ValueTraits>
+    void removeWeakNullEntries() requires (Traits::hasIsWeakNullValueFunction) { m_impl.removeWeakNullEntries(); }
 
     // Overloads for smart pointer values that take the raw pointer type as the parameter.
     template<SmartPtr V = ValueType> iterator find(std::add_const_t<typename GetPtrHelper<V>::UnderlyingType>*) LIFETIME_BOUND;
@@ -834,24 +841,6 @@ inline bool ListHashSet<T, U>::remove(const ValueType& value)
         return false;
     m_impl.remove(it);
     return true;
-}
-
-template<typename T, typename U>
-inline size_t ListHashSet<T, U>::computeSize() const requires (ValueTraits::hasIsWeakNullValueFunction)
-{
-    return m_impl.computeSize();
-}
-
-template<typename T, typename U>
-inline bool ListHashSet<T, U>::isEmptyIgnoringNullReferences() const requires (ValueTraits::hasIsWeakNullValueFunction)
-{
-    return m_impl.isEmptyIgnoringNullReferences();
-}
-
-template<typename T, typename U>
-inline void ListHashSet<T, U>::removeWeakNullEntries() requires (ValueTraits::hasIsWeakNullValueFunction)
-{
-    m_impl.removeWeakNullEntries();
 }
 
 template<typename T, typename U>

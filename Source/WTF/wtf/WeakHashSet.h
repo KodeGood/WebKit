@@ -188,7 +188,11 @@ public:
         return m_set.size();
     }
 
-    void forEach(NOESCAPE const Function<void(T&)>& callback) requires HasRefPtrMemberFunctions<T>::value
+    // Member templates so the constraints are checked at the call site: Clang 15 evaluates the
+    // requires-clause of a non-template member when the class is instantiated, possibly while T
+    // is still incomplete, which caches HasRefPtrMemberFunctions<T> as false for the whole TU.
+    template<typename U = T>
+    void forEach(NOESCAPE const Function<void(T&)>& callback) requires HasRefPtrMemberFunctions<U>::value
     {
         auto items = compactMap(m_set, [](const KeyType& item) -> RefPtr<T> {
             return RefPtr { item.get() };
@@ -197,7 +201,8 @@ public:
             callback(item.get());
     }
 
-    void forEach(NOESCAPE const Function<void(T&)>& callback) requires (HasCheckedPtrMemberFunctions<T>::value && !HasRefPtrMemberFunctions<T>::value)
+    template<typename U = T>
+    void forEach(NOESCAPE const Function<void(T&)>& callback) requires (HasCheckedPtrMemberFunctions<U>::value && !HasRefPtrMemberFunctions<U>::value)
     {
         auto items = compactMap(m_set, [](const KeyType& item) -> CheckedPtr<T> {
             return CheckedPtr { item.get() };
