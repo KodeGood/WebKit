@@ -33,7 +33,9 @@
 #include <concepts>
 #include <cstring>
 #include <errno.h>
+#if __has_include(<expected>)
 #include <expected>
+#endif
 #include <functional>
 #include <memory>
 #include <optional>
@@ -50,6 +52,48 @@
 #include <wtf/TypeCasts.h>
 #include <wtf/TypeTraits.h>
 #include <wtf/Variant.h>
+
+// libc++ before 16 has no <expected>. WTF::Expected is its own implementation and only needs
+// std::unexpected from it, so provide a minimal one.
+#if !__has_include(<expected>)
+namespace std {
+
+template<class E>
+class unexpected {
+public:
+    constexpr unexpected(const unexpected&) = default;
+    constexpr unexpected(unexpected&&) = default;
+    template<class Err = E>
+        requires (!std::is_same_v<std::remove_cvref_t<Err>, unexpected> && !std::is_same_v<std::remove_cvref_t<Err>, std::in_place_t> && std::is_constructible_v<E, Err>)
+    constexpr explicit unexpected(Err&& error) : m_error(std::forward<Err>(error)) { }
+    template<class... Args>
+    constexpr explicit unexpected(std::in_place_t, Args&&... args) : m_error(std::forward<Args>(args)...) { }
+
+    constexpr unexpected& operator=(const unexpected&) = default;
+    constexpr unexpected& operator=(unexpected&&) = default;
+
+    constexpr const E& error() const& noexcept { return m_error; }
+    constexpr E& error() & noexcept { return m_error; }
+    constexpr const E&& error() const&& noexcept { return std::move(m_error); }
+    constexpr E&& error() && noexcept { return std::move(m_error); }
+
+    constexpr void swap(unexpected& other) noexcept(std::is_nothrow_swappable_v<E>)
+    {
+        using std::swap;
+        swap(m_error, other.m_error);
+    }
+
+    template<class E2>
+    friend constexpr bool operator==(const unexpected& lhs, const unexpected<E2>& rhs) { return lhs.error() == rhs.error(); }
+
+private:
+    E m_error;
+};
+
+template<class E> unexpected(E) -> unexpected<E>;
+
+} // namespace std
+#endif
 
 WTF_ALLOW_UNSAFE_BUFFER_USAGE_BEGIN
 
