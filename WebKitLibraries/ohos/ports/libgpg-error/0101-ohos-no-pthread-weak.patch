@@ -1,0 +1,11 @@
+--- a/src/posix-lock.c
++++ b/src/posix-lock.c
+@@ -47,7 +47,7 @@
+ # if USE_POSIX_THREADS_FROM_LIBC && HAVE_SYS_SINGLE_THREADED_H
+ #  include <sys/single_threaded.h>
+ #  define use_pthread_p()  !__libc_single_threaded
+-# elif USE_POSIX_THREADS_WEAK
++# elif USE_POSIX_THREADS_WEAK && !defined(__OHOS__)
+    /* On ELF systems it is easy to use pthreads using weak
+       references.  Take care not to test the address of a weak
+       referenced function we actually use; some GCC versions have a

@@ -1,0 +1,136 @@
+diff --git a/gio/meson.build b/gio/meson.build
+index a3e6f18..4e3e1b4 100644
+--- a/gio/meson.build
++++ b/gio/meson.build
+@@ -423,7 +423,7 @@ if host_system != 'windows'
+     if process_spawn_allowed
+       launch_desktop_sources = files('gio-launch-desktop.c')
+ 
+-      if host_system == 'linux'
++      if host_system in ['linux', 'ohos']
+         launch_desktop_sources += files('../glib/gjournal-private.c')
+       endif
+ 
+diff --git a/glib/gnulib/gl_cv_func_printf_directive_a/meson.build b/glib/gnulib/gl_cv_func_printf_directive_a/meson.build
+index 6cb2964..aee1caf 100644
+--- a/glib/gnulib/gl_cv_func_printf_directive_a/meson.build
++++ b/glib/gnulib/gl_cv_func_printf_directive_a/meson.build
+@@ -84,7 +84,7 @@ if meson.can_run_host_binaries()
+       name : 'printf supports the \'a\' and \'A\' directives')
+   gl_cv_func_printf_directive_a = run_result.compiled() and run_result.returncode() == 0
+ else
+-  if host_system == 'linux'
++  if host_system in ['linux', 'ohos']
+     gl_cv_func_printf_directive_a = cc.compiles(glibc_printf_directive_a_test)
+   elif host_system == 'windows'
+     gl_cv_func_printf_directive_a = false
+diff --git a/glib/gnulib/gl_cv_func_printf_directive_f/meson.build b/glib/gnulib/gl_cv_func_printf_directive_f/meson.build
+index 5137e98..99bed77 100644
+--- a/glib/gnulib/gl_cv_func_printf_directive_f/meson.build
++++ b/glib/gnulib/gl_cv_func_printf_directive_f/meson.build
+@@ -34,7 +34,7 @@ if meson.can_run_host_binaries()
+       name : 'printf supports the \'F\' directive')
+   gl_cv_func_printf_directive_f = run_result.compiled() and run_result.returncode() == 0
+ else
+-  if host_system in ['linux', 'android']
++  if host_system in ['linux', 'android', 'ohos']
+     gl_cv_func_printf_directive_f = true
+   elif (host_system.startswith ('freebsd1') or
+         host_system.startswith ('freebsd2') or
+diff --git a/glib/gnulib/gl_cv_func_printf_enomem/meson.build b/glib/gnulib/gl_cv_func_printf_enomem/meson.build
+index caa7124..0fb99ac 100644
+--- a/glib/gnulib/gl_cv_func_printf_enomem/meson.build
++++ b/glib/gnulib/gl_cv_func_printf_enomem/meson.build
+@@ -67,7 +67,8 @@ else
+       host_system == 'aix' or 
+       host_system == 'irix' or 
+       host_system == 'beos' or 
+-      host_system == 'haiku')
++      host_system == 'haiku' or
++      host_system == 'ohos')
+     gl_cv_func_printf_enomem = true
+   endif
+ endif
+diff --git a/glib/gnulib/gl_cv_func_printf_flag_zero/meson.build b/glib/gnulib/gl_cv_func_printf_flag_zero/meson.build
+index eea5dbb..1a63a94 100644
+--- a/glib/gnulib/gl_cv_func_printf_flag_zero/meson.build
++++ b/glib/gnulib/gl_cv_func_printf_flag_zero/meson.build
+@@ -28,7 +28,7 @@ if meson.can_run_host_binaries()
+       name : 'printf supports the zero flag correctly')
+   gl_cv_func_printf_flag_zero = run_result.compiled() and run_result.returncode() == 0
+ else
+-  if host_system in ['linux', 'android']
++  if host_system in ['linux', 'android', 'ohos']
+     gl_cv_func_printf_flag_zero = true
+   elif host_system.startswith ('beos')
+     gl_cv_func_printf_flag_zero = true
+diff --git a/glib/gnulib/gl_cv_func_printf_infinite/meson.build b/glib/gnulib/gl_cv_func_printf_infinite/meson.build
+index 9e30a38..ea3538b 100644
+--- a/glib/gnulib/gl_cv_func_printf_infinite/meson.build
++++ b/glib/gnulib/gl_cv_func_printf_infinite/meson.build
+@@ -82,7 +82,7 @@ if meson.can_run_host_binaries()
+       name : 'printf supports infinite \'double\' arguments')
+   gl_cv_func_printf_infinite = run_result.compiled() and run_result.returncode() == 0
+ else
+-  if host_system in ['linux', 'android']
++  if host_system in ['linux', 'android', 'ohos']
+     gl_cv_func_printf_infinite = true
+   elif (host_system.startswith ('freebsd1') or
+         host_system.startswith ('freebsd2') or
+diff --git a/glib/gnulib/gl_cv_func_printf_infinite_long_double/meson.build b/glib/gnulib/gl_cv_func_printf_infinite_long_double/meson.build
+index 64bab0f..b221c87 100644
+--- a/glib/gnulib/gl_cv_func_printf_infinite_long_double/meson.build
++++ b/glib/gnulib/gl_cv_func_printf_infinite_long_double/meson.build
+@@ -175,7 +175,7 @@ if gl_cv_func_printf_long_double
+     if host_machine.cpu_family() == 'x86_64'
+       gl_cv_func_printf_infinite_long_double = false
+     else
+-      if host_system in ['linux', 'android']
++      if host_system in ['linux', 'android', 'ohos']
+         gl_cv_func_printf_infinite_long_double = true
+       elif (host_system.startswith ('freebsd1') or
+             host_system.startswith ('freebsd2') or
+diff --git a/glib/meson.build b/glib/meson.build
+index 0fb6e26..7d93909 100644
+--- a/glib/meson.build
++++ b/glib/meson.build
+@@ -389,7 +389,7 @@ else
+   platform_deps = []
+ endif
+ 
+-if host_system == 'linux'
++if host_system in ['linux', 'ohos']
+   glib_sources += files('gjournal-private.c')
+ endif
+ 
+diff --git a/meson.build b/meson.build
+index bb68398..c9f05b4 100644
+--- a/meson.build
++++ b/meson.build
+@@ -996,7 +996,7 @@ else
+ endif
+ message('Checking whether to use statfs or statvfs .. ' + stat_func_to_use)
+ 
+-if host_system == 'linux'
++if host_system in ['linux', 'ohos']
+   if cc.has_function('mkostemp',
+                      prefix: '''#define _GNU_SOURCE
+                                 #include <stdlib.h>''')
+@@ -2369,7 +2369,7 @@ glib_conf.set_quoted('GLIB_RUNSTATEDIR', glib_runstatedir)
+ # libmount is only used by gio, but we need to fetch the libs to generate the
+ # pkg-config file below
+ libmount_dep = []
+-if host_system == 'linux'
++if host_system in ['linux', 'ohos']
+   libmount_dep = dependency('mount', version : '>=2.23', required : get_option('libmount'))
+   glib_conf.set('HAVE_LIBMOUNT', libmount_dep.found())
+ 
+@@ -2388,7 +2388,7 @@ else
+ endif
+ 
+ selinux_dep = []
+-if host_system == 'linux'
++if host_system in ['linux', 'ohos']
+   selinux_dep = dependency('libselinux', version: '>=2.2', required: get_option('selinux'))
+ 
+   glib_conf.set('HAVE_SELINUX', selinux_dep.found())
