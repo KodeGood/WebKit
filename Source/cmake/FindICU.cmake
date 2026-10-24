@@ -35,13 +35,9 @@ if (APPLE)
     set(ICU_FOUND ON)
     message(STATUS "Found ICU: ${ICU_LIBRARIES}")
 else ()
-    # Defer to CMake's built-in FindICU by removing ourselves
-    # from the module path for the duration of this call.
-    set(_saved_module_path "${CMAKE_MODULE_PATH}")
-    list(REMOVE_ITEM CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}")
-    find_package(ICU ${ICU_FIND_VERSION}
-        ${ICU_FIND_REQUIRED_arg}
-        ${ICU_FIND_QUIETLY_arg}
-        COMPONENTS ${ICU_FIND_COMPONENTS})
-    set(CMAKE_MODULE_PATH "${_saved_module_path}")
+    # Defer to CMake's built-in FindICU. Include it rather than calling
+    # find_package() again: a nested find_package() runs package-manager
+    # wrappers (e.g. vcpkg's ICU wrapper) twice, and the inner run clobbers
+    # the outer one's fixups, leaving ICU::uc without an IMPORTED_LOCATION.
+    include(${CMAKE_ROOT}/Modules/FindICU.cmake)
 endif ()
