@@ -94,7 +94,7 @@ private:
 
     std::optional<CSSToLengthConversionData> cssConversionData() const;
 
-    template<typename SizeType> float valueForSizeType(const SizeType&, Style::ZoomFactor usedZoom, SVGLengthMode = SVGLengthMode::Other) requires (SizeType::Fixed::zoomOptions == CSS::RangeZoomOptions::Unzoomed || SizeType::Calc::range.zoomOptions == CSS::RangeZoomOptions::Unzoomed);
+    template<typename SizeType> float valueForSizeType(const SizeType&, Style::ZoomFactor usedZoom, SVGLengthMode = SVGLengthMode::Other) requires (SizeType::Fixed::range.zoomOptions == CSS::RangeZoomOptions::Unzoomed || SizeType::Calc::range.zoomOptions == CSS::RangeZoomOptions::Unzoomed);
     template<typename SizeType> float valueForSizeType(const SizeType&, Style::ZoomNeeded, SVGLengthMode = SVGLengthMode::Other);
 
     WeakPtr<const SVGElement, WeakPtrImplWithEventTargetData> m_context;
