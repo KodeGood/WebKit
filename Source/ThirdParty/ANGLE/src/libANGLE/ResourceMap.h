@@ -459,8 +459,9 @@ void ResourceMap<ResourceType, IDType>::assignAboveCurrentFlatSize(GLuint handle
     if constexpr (kAdditionalFlatResourcesSize > 0)
     {
         // This should only possible when lock is needed. Otherwise we could just grow
-        // mFlatResources.
-        static_assert(kNeedsLock);
+        // mFlatResources. Enforced by the class-level static_assert; a static_assert here is
+        // non-dependent when the share context lock is disabled, which Clang < 17 rejects even
+        // in a discarded branch.
         if (handle < kLocklessFlatResourcesLimit)
         {
             ResourceType **additionalResources =
