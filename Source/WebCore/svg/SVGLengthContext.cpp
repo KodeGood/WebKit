@@ -114,7 +114,7 @@ static inline float dimensionForLengthMode(SVGLengthMode mode, FloatSize viewpor
 }
 
 template<typename SizeType> float SVGLengthContext::valueForSizeType(const SizeType& size, Style::ZoomFactor usedZoom, SVGLengthMode lengthMode)
-    requires (SizeType::Fixed::zoomOptions == CSS::RangeZoomOptions::Unzoomed || SizeType::Calc::range.zoomOptions == CSS::RangeZoomOptions::Unzoomed)
+    requires (SizeType::Fixed::range.zoomOptions == CSS::RangeZoomOptions::Unzoomed || SizeType::Calc::range.zoomOptions == CSS::RangeZoomOptions::Unzoomed)
 {
     return WTF::switchOn(size,
         [&](const typename SizeType::Fixed& fixed) -> float {
