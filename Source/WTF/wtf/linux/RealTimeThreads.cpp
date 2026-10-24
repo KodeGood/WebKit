@@ -55,9 +55,11 @@ namespace WTF {
 static const int s_realTimeThreadPriority = 5;
 
 #if USE(GLIB) && defined(RLIMIT_RTTIME)
+#if !OS(OHOS)
 // Matches rtkit's default RTTimeUSecMax; used on the direct sched_setscheduler
 // path where we don't query rtkit/portal for a value.
 static constexpr rlim_t s_realTimeLimitDefaultUSec = 200000;
+#endif
 
 // Lower RLIMIT_RTTIME to maxUSec (and its soft limit to 80% of that, so
 // SIGXCPU fires before the hard cap) if the current hard limit is higher.
@@ -73,6 +75,9 @@ static void tightenRealTimeLimit(rlim_t maxUSec)
     setrlimit(RLIMIT_RTTIME, &rl);
 }
 
+// On OHOS the 200 ms cap is exceeded during startup and the kernel SIGKILLs the
+// app before the main loop gets to demote threads on SIGXCPU.
+#if !OS(OHOS)
 static void ensureRealTimeLimitSet()
 {
     static std::once_flag onceFlag;
@@ -80,6 +85,7 @@ static void ensureRealTimeLimitSet()
         tightenRealTimeLimit(s_realTimeLimitDefaultUSec);
     });
 }
+#endif
 #endif
 
 RealTimeThreads& RealTimeThreads::singleton()
@@ -145,7 +151,7 @@ void RealTimeThreads::promoteThreadToRealTime(const Thread& thread)
 {
     ASSERT(isMainThread());
 
-#if USE(GLIB) && defined(RLIMIT_RTTIME)
+#if USE(GLIB) && defined(RLIMIT_RTTIME) && !OS(OHOS)
     // Seed RLIMIT_RTTIME with a sensible default so the direct
     // sched_setscheduler path below is protected by SIGXCPU. If we
     // fall back to rtkit/portal, realTimeKitMakeThreadRealTime may
