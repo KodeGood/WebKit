@@ -310,8 +310,6 @@ inline Position positionAfterNode(Node& anchorNode)
     return Position(&anchorNode, Position::PositionIsAfterAnchor);
 }
 
-inline bool offsetIsBeforeLastNodeOffset(unsigned offset, Node anchorNode);
-
 } // namespace WebCore
 
 #if ENABLE(TREE_DEBUGGING)
