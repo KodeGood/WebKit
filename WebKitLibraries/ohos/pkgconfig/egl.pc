@@ -1,0 +1,5 @@
+Name: egl
+Description: EGL shim for OpenHarmony (provided by the SDK sysroot)
+Version: 1.5
+Libs: -lEGL
+Cflags:
