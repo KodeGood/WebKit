@@ -35,6 +35,10 @@ set(USE_WOFF2 OFF CACHE BOOL "")
 set(CMAKE_INSTALL_LIBDIR lib CACHE STRING "")
 set(CMAKE_INSTALL_LIBEXECDIR libexec CACHE PATH "")
 
+# libc++ 15 in the OHOS SDK still marks parts of the C++20 library (<ranges>,
+# <format>) experimental; they are only available with -fexperimental-library.
+set(CMAKE_CXX_FLAGS "-fexperimental-library" CACHE STRING "")
+
 # FIXME: -lintl and -lsharpyuv cover link dependencies of static libraries
 # (gettext-libintl via glib, sharpyuv via libwebp) that the find modules don't
 # propagate. Drop them once the find modules pick up the private link deps.
