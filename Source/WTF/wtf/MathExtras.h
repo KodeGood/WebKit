@@ -169,7 +169,7 @@ inline double roundTowardsPositiveInfinity(double value) { return std::floor(val
 inline float roundTowardsPositiveInfinity(float value) { return std::floor(value + 0.5f); }
 
 // C23 roundeven polyfill.
-#if CPU(ARM64)
+#if CPU(ARM64) && __has_builtin(__builtin_roundeven)
 // On ARM64, __builtin_roundeven(f) inlines to frintn. On x86_64, Clang
 // may emit a library call to roundeven which is C23 and not
 // universally available.
