@@ -1,0 +1,15 @@
+{
+  "name": "libxkbcommon",
+  "version": "1.13.1",
+  "port-version": 100,
+  "description": "keymap handling library for toolkits and window systems (OHOS overlay: X11/Wayland backends dropped — WPEPlatform only needs keymap/keysym handling)",
+  "homepage": "https://xkbcommon.org/",
+  "license": null,
+  "dependencies": [
+    "getopt",
+    {
+      "name": "vcpkg-tool-meson",
+      "host": true
+    }
+  ]
+}

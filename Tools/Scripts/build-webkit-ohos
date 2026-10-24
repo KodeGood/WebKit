@@ -1,0 +1,92 @@
+#!/usr/bin/env python3
+#
+# Build the WPE port for OpenHarmony (arm64-ohos) from this tree.
+#
+# Dependencies come from vcpkg in manifest mode (WebKitLibraries/ohos/vcpkg.json); they are
+# installed into <build-dir>/vcpkg_installed during the first CMake configure. WebKit itself
+# is a regular CMake/Ninja build tree, so after the first run `ninja -C <build-dir>` is enough
+# for incremental work.
+#
+# Environment:
+#   OHOS_SDK_ROOT  OpenHarmony SDK API dir (contains native/build/cmake/ohos.toolchain.cmake)
+#   VCPKG_ROOT     vcpkg checkout; when unset, one is bootstrapped into WebKitBuild/vcpkg
+
+import argparse
+import os
+import pathlib
+import shutil
+import subprocess
+import sys
+
+SOURCE_DIR = pathlib.Path(__file__).resolve().parents[2]
+OHOS_LIBRARIES_DIR = SOURCE_DIR / "WebKitLibraries" / "ohos"
+OHOS_TOOLS_DIR = SOURCE_DIR / "Tools" / "ohos"
+
+
+def run(command: list) -> None:
+    print("+ " + " ".join(str(c) for c in command), flush=True)
+    subprocess.check_call([str(c) for c in command])
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Build the WPE port for OpenHarmony using vcpkg.")
+    config = parser.add_mutually_exclusive_group()
+    config.add_argument("--release", dest="config", action="store_const", const="Release")
+    config.add_argument("--debug", dest="config", action="store_const", const="Debug")
+    parser.add_argument("--triplet", default="arm64-ohos", help="vcpkg target triplet (default: arm64-ohos)")
+    parser.add_argument("--build-dir", type=pathlib.Path, help="default: WebKitBuild/OHOS/<Release|Debug>")
+    parser.add_argument("--reconfigure", action="store_true", help="re-run CMake even if the build dir is configured")
+    parser.add_argument("--no-package", action="store_true", help="skip install and dist/ packaging")
+    parser.add_argument("--no-strip", action="store_true", help="do not strip the packaged libraries")
+    parser.add_argument("--cmake-arg", action="append", default=[], help="extra argument passed to CMake configure")
+    parser.add_argument("-j", "--jobs", type=int, help="parallel build jobs")
+    parser.set_defaults(config="Release")
+    args = parser.parse_args()
+
+    sdk = os.environ.get("OHOS_SDK_ROOT", "")
+    if not (pathlib.Path(sdk) / "native" / "build" / "cmake" / "ohos.toolchain.cmake").is_file():
+        print("ERROR: OHOS_SDK_ROOT must point at the OpenHarmony SDK API dir "
+              "(containing native/build/cmake/ohos.toolchain.cmake).", file=sys.stderr)
+        return 1
+
+    if not os.environ.get("VCPKG_ROOT"):
+        vcpkg_root = SOURCE_DIR / "WebKitBuild" / "vcpkg"
+        run([sys.executable, OHOS_TOOLS_DIR / "bootstrap-vcpkg.py", "--vcpkg-root", vcpkg_root])
+        os.environ["VCPKG_ROOT"] = str(vcpkg_root)
+
+    build_dir = (args.build_dir or SOURCE_DIR / "WebKitBuild" / "OHOS" / args.config).resolve()
+    install_dir = build_dir / "install"
+
+    if args.reconfigure or not (build_dir / "CMakeCache.txt").exists():
+        run(["cmake", "-G", "Ninja", "-S", SOURCE_DIR, "-B", build_dir,
+             "-C", OHOS_LIBRARIES_DIR / "OptionsOHOSCache.cmake",
+             f"-DCMAKE_TOOLCHAIN_FILE={OHOS_LIBRARIES_DIR.parent / 'toolchains' / 'ohos-cross.cmake'}",
+             f"-DVCPKG_TARGET_TRIPLET={args.triplet}",
+             f"-DCMAKE_BUILD_TYPE={args.config}",
+             f"-DCMAKE_INSTALL_PREFIX={install_dir}",
+             *args.cmake_arg])
+
+    build = ["cmake", "--build", build_dir]
+    if args.jobs:
+        build += ["--parallel", str(args.jobs)]
+    run(build)
+
+    if args.no_package:
+        return 0
+
+    if install_dir.exists():
+        shutil.rmtree(install_dir)
+    run(["cmake", "--install", build_dir])
+
+    package = [sys.executable, OHOS_TOOLS_DIR / "package.py",
+               "--webkit-install", install_dir,
+               "--deps", build_dir / "vcpkg_installed" / args.triplet,
+               "--out", build_dir / "dist"]
+    if args.no_strip:
+        package.append("--no-strip")
+    run(package)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
