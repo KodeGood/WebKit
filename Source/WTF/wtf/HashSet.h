@@ -88,9 +88,16 @@ public:
     bool isEmpty() const;
 
     // Useful when the key type is WeakPtr
-    size_t computeSize() const requires (ValueTraits::hasIsWeakNullValueFunction);
-    bool isEmptyIgnoringNullReferences() const requires (ValueTraits::hasIsWeakNullValueFunction);
-    void removeWeakNullEntries() requires (ValueTraits::hasIsWeakNullValueFunction);
+    // Member templates defined in the class, for Clang 15: it can't look up ValueTraits in the
+    // trailing requires-clause of an out-of-line definition, and it evaluates the requires-clause
+    // of a non-template member when the class is instantiated, which instantiates HashTraits<T>
+    // before a later explicit specialization of it.
+    template<typename Traits = ValueTraits>
+    size_t computeSize() const requires (Traits::hasIsWeakNullValueFunction) { return m_impl.computeSize(); }
+    template<typename Traits = ValueTraits>
+    bool isEmptyIgnoringNullReferences() const requires (Traits::hasIsWeakNullValueFunction) { return m_impl.isEmptyIgnoringNullReferences(); }
+    template<typename Traits = ValueTraits>
+    void removeWeakNullEntries() requires (Traits::hasIsWeakNullValueFunction) { m_impl.removeWeakNullEntries(); }
 
     void reserveInitialCapacity(unsigned keyCount) { m_impl.reserveInitialCapacity(keyCount); }
 
@@ -290,24 +297,6 @@ template<typename T, typename U, typename V, typename W, ShouldValidateKey shoul
 inline bool HashSet<T, U, V, W, shouldValidateKey>::isEmpty() const
 {
     return m_impl.isEmpty(); 
-}
-
-template<typename T, typename U, typename V, typename W, ShouldValidateKey shouldValidateKey>
-inline size_t HashSet<T, U, V, W, shouldValidateKey>::computeSize() const requires (ValueTraits::hasIsWeakNullValueFunction)
-{
-    return m_impl.computeSize();
-}
-
-template<typename T, typename U, typename V, typename W, ShouldValidateKey shouldValidateKey>
-inline bool HashSet<T, U, V, W, shouldValidateKey>::isEmptyIgnoringNullReferences() const requires (ValueTraits::hasIsWeakNullValueFunction)
-{
-    return m_impl.isEmptyIgnoringNullReferences();
-}
-
-template<typename T, typename U, typename V, typename W, ShouldValidateKey shouldValidateKey>
-inline void HashSet<T, U, V, W, shouldValidateKey>::removeWeakNullEntries() requires (ValueTraits::hasIsWeakNullValueFunction)
-{
-    m_impl.removeWeakNullEntries();
 }
 
 template<typename T, typename U, typename V, typename W, ShouldValidateKey shouldValidateKey>
