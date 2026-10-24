@@ -35,3 +35,7 @@ set(USE_WOFF2 OFF CACHE BOOL "")
 
 set(CMAKE_INSTALL_LIBDIR lib CACHE STRING "")
 set(CMAKE_INSTALL_LIBEXECDIR libexec CACHE PATH "")
+
+# libc++ 15 in the OHOS SDK still marks parts of the C++20 library (<ranges>,
+# <format>) experimental; they are only available with -fexperimental-library.
+set(CMAKE_CXX_FLAGS "-fexperimental-library" CACHE STRING "")
