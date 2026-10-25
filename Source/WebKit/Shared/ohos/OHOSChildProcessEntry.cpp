@@ -127,6 +127,10 @@ void applyEnvironment(const SandboxDirs& dirs)
     setenv("GST_REGISTRY", gstRegistry.c_str(), 1);
     setenv("GST_REGISTRY_FORK", "no", 1);
 
+    // The system CA store, in OpenSSL's hashed directory layout, for glib-networking's
+    // OpenSSL backend to verify TLS certificates. Our OpenSSL build has no CA dir of its own.
+    setenv("SSL_CERT_DIR", "/system/etc/security/certificates", 0);
+
     setenv("WEBKIT_SKIA_ENABLE_CPU_RENDERING", "1", 1);
     setenv("WEBKIT_SKIA_GPU_PAINTING_THREADS", "0", 1);
 
