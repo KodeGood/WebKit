@@ -90,6 +90,30 @@ void WPEQtView::geometryChange(const QRectF& newGeometry, const QRectF&)
 
 }
 
+void WPEQtView::itemChange(ItemChange change, const ItemChangeData& value)
+{
+    QQuickItem::itemChange(change, value);
+    if (change == ItemVisibleHasChanged)
+        updateWpeViewMapped();
+}
+
+void WPEQtView::updateWpeViewMapped()
+{
+    Q_D(WPEQtView);
+    if (!d->m_webView)
+        return;
+
+    // An unmapped view makes the page hidden, which stops its rendering updates, for example
+    // in the background tabs of a browser.
+    auto* wpeView = webkit_web_view_get_wpe_view(d->m_webView.get());
+    if (isVisible()) {
+        wpe_view_map(wpeView);
+        // Show and release a frame that arrived while the item was hidden.
+        update();
+    } else
+        wpe_view_unmap(wpeView);
+}
+
 void WPEQtView::configureWindow()
 {
     auto* win = window();
@@ -131,7 +155,9 @@ void WPEQtView::createWebView()
         wpe_toplevel_resize(wpeToplevel, d->m_size.width(), d->m_size.height());
     updateDevicePixelRatio();
 
-    wpe_view_map(wpeView); // FIXME: unmap when appropriate and implement can_be_mapped if needed.
+    // WebKit renders the page only while its view is mapped, see updateWpeViewMapped().
+    if (isVisible())
+        wpe_view_map(wpeView);
 
     if (!wpe_view_qtquick_initialize_rendering(WPE_VIEW_QTQUICK(wpeView), this, &error.outPtr())) {
         g_warning("Failed to create Web view: %s", error->message);

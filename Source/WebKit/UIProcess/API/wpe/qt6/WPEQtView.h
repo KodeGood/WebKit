@@ -90,6 +90,7 @@ protected:
 
     bool event(QEvent*) override;
     void geometryChange(const QRectF&, const QRectF&) override;
+    void itemChange(ItemChange, const ItemChangeData&) override;
 
     void hoverEnterEvent(QHoverEvent*) override;
     void hoverLeaveEvent(QHoverEvent*) override;
@@ -115,6 +116,7 @@ private Q_SLOTS:
     void invalidateSceneGraph();
     void updateWpeToplevelState();
     void updateDevicePixelRatio();
+    void updateWpeViewMapped();
 
 private:
     QSGNode* updatePaintNode(QSGNode*, UpdatePaintNodeData*) final;
