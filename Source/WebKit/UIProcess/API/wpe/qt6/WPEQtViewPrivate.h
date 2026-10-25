@@ -35,6 +35,7 @@ public:
     QUrl m_baseUrl;
     QSize m_size { 800, 600 };
     bool m_errorOccured { false };
+    QUrl m_icon;
 };
 
 Q_DECLARE_METATYPE(WPEQtViewPrivate)

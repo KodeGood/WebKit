@@ -27,6 +27,8 @@
 #include "WPEQtViewPrivate.h"
 #include "WPEViewQtQuick.h"
 
+#include <QBuffer>
+#include <QImage>
 #include <QQmlEngine>
 #include <QQuickWindow>
 #include <QSGSimpleTextureNode>
@@ -171,6 +173,14 @@ void WPEQtView::createWebView()
     g_signal_connect(d->m_webView.get(), "load-changed", G_CALLBACK(notifyLoadChangedCallback), this);
     g_signal_connect(d->m_webView.get(), "load-failed", G_CALLBACK(notifyLoadFailedCallback), this);
 
+    g_signal_connect_swapped(d->m_webView.get(), "notify::page-icons", G_CALLBACK(notifyPageIconsCallback), this);
+
+    // WebKit loads page icons, for the icon property, only with the favicon database of the
+    // network session enabled. The views of a session share it.
+    auto* dataManager = webkit_network_session_get_website_data_manager(webkit_web_view_get_network_session(d->m_webView.get()));
+    if (!webkit_website_data_manager_get_favicons_enabled(dataManager))
+        webkit_website_data_manager_set_favicons_enabled(dataManager, TRUE);
+
     if (!d->m_url.isEmpty())
         webkit_web_view_load_uri(d->m_webView.get(), d->m_url.toString().toUtf8().constData());
     else if (!d->m_html.isEmpty())
@@ -187,6 +197,44 @@ void WPEQtView::createWebView()
 void WPEQtView::notifyUrlChangedCallback(WPEQtView* view)
 {
     Q_EMIT view->urlChanged();
+}
+
+// The largest icon, scaled down to a size fit for tabs and bookmarks, as a data URL that an
+// Image item can show.
+static QUrl iconDataUrl(WebKitImageList* icons)
+{
+    WebKitImage* largest = nullptr;
+    for (gsize i = 0; i < webkit_image_list_get_length(icons); ++i) {
+        auto* icon = webkit_image_list_get(icons, i);
+        if (!largest || webkit_image_get_width(icon) > webkit_image_get_width(largest))
+            largest = icon;
+    }
+    if (!largest)
+        return { };
+
+    auto* bytes = webkit_image_as_bytes(largest);
+    QImage image(static_cast<const uchar*>(g_bytes_get_data(bytes, nullptr)), webkit_image_get_width(largest),
+        webkit_image_get_height(largest), webkit_image_get_stride(largest), QImage::Format_ARGB32_Premultiplied);
+    constexpr int maximumSize = 96;
+    if (image.width() > maximumSize || image.height() > maximumSize)
+        image = image.scaled(maximumSize, maximumSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+
+    QByteArray png;
+    QBuffer buffer(&png);
+    buffer.open(QIODevice::WriteOnly);
+    if (!image.save(&buffer, "PNG"))
+        return { };
+    return QUrl(QStringLiteral("data:image/png;base64,") + QString::fromLatin1(png.toBase64()));
+}
+
+void WPEQtView::notifyPageIconsCallback(WPEQtView* view)
+{
+    auto* icons = webkit_web_view_get_page_icons(view->d_func()->m_webView.get());
+    auto icon = icons ? iconDataUrl(icons) : QUrl();
+    if (icon == view->d_func()->m_icon)
+        return;
+    view->d_func()->m_icon = icon;
+    Q_EMIT view->iconChanged();
 }
 
 void WPEQtView::notifyTitleChangedCallback(WPEQtView* view)
@@ -324,6 +372,19 @@ int WPEQtView::loadProgress() const
 
   The title of the currently loaded web page.
 */
+/*!
+  \qmlproperty url WPEView::icon
+  \readonly
+
+  The favicon of the currently loaded web page as a data URL, or an empty URL when the page
+  has none.
+*/
+QUrl WPEQtView::icon() const
+{
+    Q_D(const WPEQtView);
+    return d->m_icon;
+}
+
 QString WPEQtView::title() const
 {
     Q_D(const WPEQtView);

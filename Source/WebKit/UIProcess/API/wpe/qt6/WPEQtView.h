@@ -41,6 +41,7 @@ class QT_WPE_EXPORT WPEQtView : public QQuickItem {
     Q_PROPERTY(bool loading READ isLoading NOTIFY loadingChanged)
     Q_PROPERTY(int loadProgress READ loadProgress NOTIFY loadProgressChanged)
     Q_PROPERTY(QString title READ title NOTIFY titleChanged)
+    Q_PROPERTY(QUrl icon READ icon NOTIFY iconChanged)
     Q_PROPERTY(bool canGoBack READ canGoBack NOTIFY loadingChanged)
     Q_PROPERTY(bool canGoForward READ canGoForward NOTIFY loadingChanged)
     Q_ENUMS(LoadStatus)
@@ -63,6 +64,7 @@ public:
     void setUrl(const QUrl&);
     int loadProgress() const;
     QString title() const;
+    QUrl icon() const;
     bool canGoBack() const;
     bool isLoading() const;
     bool canGoForward() const;
@@ -81,6 +83,7 @@ Q_SIGNALS:
     void webViewCreated();
     void urlChanged();
     void titleChanged();
+    void iconChanged();
     void loadingChanged(WPEQtViewLoadRequest* loadRequest);
     void loadProgressChanged();
 
@@ -122,6 +125,7 @@ private:
     QSGNode* updatePaintNode(QSGNode*, UpdatePaintNodeData*) final;
 
     static void notifyUrlChangedCallback(WPEQtView*);
+    static void notifyPageIconsCallback(WPEQtView*);
     static void notifyTitleChangedCallback(WPEQtView*);
     static void notifyLoadProgressCallback(WPEQtView*);
     static void notifyLoadChangedCallback(WebKitWebView*, WebKitLoadEvent, WPEQtView*);
