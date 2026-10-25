@@ -7,6 +7,10 @@
 # is a regular CMake/Ninja build tree, so after the first run `ninja -C <build-dir>` is enough
 # for incremental work.
 #
+# The Qt/QML plugin (org.wpewebkit.qtwpe) is built only with --qt, which takes a Qt for
+# OpenHarmony build (or install) dir; its host Qt is the one that Qt build was configured with,
+# unless --qt-host-path says otherwise.
+#
 # Environment:
 #   OHOS_SDK_ROOT  OpenHarmony SDK API dir (contains native/build/cmake/ohos.toolchain.cmake)
 #   VCPKG_ROOT     vcpkg checkout; when unset, one is bootstrapped into WebKitBuild/vcpkg
@@ -39,6 +43,10 @@ def main() -> int:
     parser.add_argument("--no-package", action="store_true", help="skip install and dist/ packaging")
     parser.add_argument("--no-strip", action="store_true", help="do not strip the packaged libraries")
     parser.add_argument("--cmake-arg", action="append", default=[], help="extra argument passed to CMake configure")
+    parser.add_argument("--qt", type=pathlib.Path, metavar="DIR",
+                        help="build the Qt/QML plugin against this Qt for OpenHarmony build dir")
+    parser.add_argument("--qt-host-path", type=pathlib.Path, metavar="DIR",
+                        help="host Qt matching --qt (default: the one --qt was configured with)")
     parser.add_argument("-j", "--jobs", type=int, help="parallel build jobs")
     parser.set_defaults(config="Release")
     args = parser.parse_args()
@@ -57,13 +65,28 @@ def main() -> int:
     build_dir = (args.build_dir or SOURCE_DIR / "WebKitBuild" / "OHOS" / args.config).resolve()
     install_dir = build_dir / "install"
 
-    if args.reconfigure or not (build_dir / "CMakeCache.txt").exists():
+    qt_args = ["-DENABLE_WPE_QT_API=OFF"]
+    if args.qt:
+        qt_dir = args.qt.resolve()
+        if not (qt_dir / "lib" / "cmake" / "Qt6" / "Qt6Config.cmake").is_file():
+            print(f"ERROR: {qt_dir} is not a Qt for OpenHarmony build dir (no lib/cmake/Qt6/Qt6Config.cmake).",
+                  file=sys.stderr)
+            return 1
+        qt_args = ["-DENABLE_WPE_QT_API=ON", f"-DWEBKIT_OHOS_QT_DIR:PATH={qt_dir}"]
+        if args.qt_host_path:
+            qt_args.append(f"-DQT_HOST_PATH:PATH={args.qt_host_path.resolve()}")
+
+    cache = build_dir / "CMakeCache.txt"
+    # A tree configured without Qt, or against another Qt, has to be configured again.
+    qt_changed = args.qt and f"WEBKIT_OHOS_QT_DIR:PATH={args.qt.resolve()}\n" not in (cache.read_text() if cache.exists() else "")
+    if args.reconfigure or qt_changed or not cache.exists():
         run(["cmake", "-G", "Ninja", "-S", SOURCE_DIR, "-B", build_dir,
              "-C", OHOS_LIBRARIES_DIR / "OptionsOHOSCache.cmake",
              f"-DCMAKE_TOOLCHAIN_FILE={OHOS_LIBRARIES_DIR.parent / 'toolchains' / 'ohos-cross.cmake'}",
              f"-DVCPKG_TARGET_TRIPLET={args.triplet}",
              f"-DCMAKE_BUILD_TYPE={args.config}",
              f"-DCMAKE_INSTALL_PREFIX={install_dir}",
+             *qt_args,
              *args.cmake_arg])
 
     build = ["cmake", "--build", build_dir]

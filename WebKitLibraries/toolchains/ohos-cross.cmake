@@ -50,6 +50,13 @@ set(VCPKG_LINKER_FLAGS "-L${_webkit_ohos_prefix}/lib -lintl -lsharpyuv -Wl,--und
 set(VCPKG_CHAINLOAD_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/toolchains/ohos.cmake")
 include("$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake")
 
+# Qt for OpenHarmony for the Qt/QML plugin (ENABLE_WPE_QT_API). The SDK toolchain only
+# searches packages under the find roots, so the Qt build dir has to be one of them.
+if (WEBKIT_OHOS_QT_DIR)
+    list(APPEND CMAKE_FIND_ROOT_PATH "${WEBKIT_OHOS_QT_DIR}")
+    list(APPEND CMAKE_PREFIX_PATH "${WEBKIT_OHOS_QT_DIR}")
+endif ()
+
 set(ICU_ROOT "${_webkit_ohos_prefix}")
 set(ZLIB_ROOT "${_webkit_ohos_prefix}")
 

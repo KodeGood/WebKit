@@ -142,6 +142,11 @@ def main() -> int:
         else:
             warnings.append(f"sidecar dir missing: lib/{rel}")
 
+    # Qt/QML plugin (org.wpewebkit.qtwpe), only present when built with --qt
+    qml = wk / "lib" / "qt6" / "qml"
+    if qml.is_dir():
+        copy(qml, out_lib / "qt6" / "qml")
+
     # dlopen'd plugin/module dirs from <deps>/plugins/<src> -> dist lib/<dst>
     for src_name, dst_rel in PLUGIN_DIRS.items():
         src = deps / "plugins" / src_name
