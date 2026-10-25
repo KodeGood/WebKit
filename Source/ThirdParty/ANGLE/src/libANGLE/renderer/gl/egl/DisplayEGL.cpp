@@ -116,6 +116,9 @@ const char *DisplayEGL::getEGLPath() const
 #    else
     return "/system/lib/libEGL.so";
 #    endif
+#elif defined(__OHOS__)
+    // The NDK library is unversioned, and absolute system paths are outside the app's linker namespace.
+    return "libEGL.so";
 #else
     return "libEGL.so.1";
 #endif

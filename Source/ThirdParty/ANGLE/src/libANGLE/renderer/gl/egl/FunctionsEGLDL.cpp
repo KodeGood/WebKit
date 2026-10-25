@@ -64,6 +64,23 @@ egl::Error FunctionsEGLDL::initialize(EGLAttrib platformType,
 
 void *FunctionsEGLDL::getProcAddress(const char *name) const
 {
+#if defined(__OHOS__)
+    // eglGetProcAddress() of the OHOS EGL wrapper returns the vendor driver's core functions,
+    // which bypass the wrapper's display, context and current-context tracking that the rest of
+    // the process relies on. Prefer the wrapper's exported entry points.
+    if (void *f = dlsym(nativeEGLHandle, name))
+    {
+        return f;
+    }
+    static void *glesHandle = dlopen("libGLESv3.so", RTLD_NOW);
+    if (glesHandle)
+    {
+        if (void *f = dlsym(glesHandle, name))
+        {
+            return f;
+        }
+    }
+#endif
     void *f = reinterpret_cast<void *>(mGetProcAddressPtr(name));
     if (f)
     {

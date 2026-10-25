@@ -44,7 +44,10 @@ EGLDisplay PlatformDisplay::angleEGLDisplay() const
 
     Vector<EGLint> displayAttributes {
         EGL_PLATFORM_ANGLE_TYPE_ANGLE, EGL_PLATFORM_ANGLE_TYPE_OPENGLES_ANGLE,
-#if !OS(ANDROID) && !OS(OHOS)
+#if OS(OHOS)
+        // ANGLE is built as a Linux port for OHOS, and picks its EGL backend only for the EGL device type.
+        EGL_PLATFORM_ANGLE_DEVICE_TYPE_ANGLE, EGL_PLATFORM_ANGLE_DEVICE_TYPE_EGL_ANGLE,
+#elif !OS(ANDROID)
         EGL_PLATFORM_ANGLE_DEVICE_TYPE_ANGLE, EGL_PLATFORM_ANGLE_DEVICE_TYPE_EGL_ANGLE,
         EGL_PLATFORM_ANGLE_NATIVE_PLATFORM_TYPE_ANGLE, m_anglePlatform.value(),
 #endif
