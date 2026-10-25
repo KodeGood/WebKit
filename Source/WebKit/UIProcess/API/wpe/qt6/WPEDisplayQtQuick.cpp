@@ -26,6 +26,7 @@
 #include "config.h"
 #include "WPEDisplayQtQuick.h"
 
+#include "WPEKeymapQtQuick.h"
 #include "WPEToplevelQtQuick.h"
 #include "WPEViewQtQuick.h"
 
@@ -36,6 +37,10 @@
 #include <wpe/GRefPtrWPE.h>
 #include <wtf/glib/GRefPtr.h>
 #include <wtf/glib/WTFGType.h>
+
+#if OS(OHOS)
+#include <drm/drm_fourcc.h>
+#endif
 
 #ifndef EGL_DRM_RENDER_NODE_FILE_EXT
 #define EGL_DRM_RENDER_NODE_FILE_EXT 0x3377
@@ -49,6 +54,9 @@
 struct _WPEDisplayQtQuickPrivate {
     EGLDisplay eglDisplay;
     GRefPtr<WPEDRMDevice> drmDevice;
+#if OS(OHOS)
+    GRefPtr<WPEKeymap> keymap;
+#endif
 };
 WEBKIT_DEFINE_FINAL_TYPE(WPEDisplayQtQuick, wpe_display_qtquick, WPE_TYPE_DISPLAY, WPEDisplay)
 
@@ -56,7 +64,14 @@ static gboolean wpeDisplayQtQuickConnect(WPEDisplay* display, GError** error)
 {
     auto* priv = WPE_DISPLAY_QTQUICK(display)->priv;
 
+#if OS(OHOS)
+    // The OHOS QPA does not expose its EGL display, it uses the default one.
+    auto eglDisplay = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+    if (eglDisplay != EGL_NO_DISPLAY && !eglInitialize(eglDisplay, nullptr, nullptr))
+        eglDisplay = EGL_NO_DISPLAY;
+#else
     auto eglDisplay = static_cast<EGLDisplay>(QGuiApplication::platformNativeInterface()->nativeResourceForIntegration("eglDisplay"));
+#endif
     if (!eglDisplay) {
         g_set_error_literal(error, WPE_VIEW_ERROR, WPE_VIEW_ERROR_RENDER_FAILED, "Failed to initialize rendering: Cannot access EGL display via Qt");
         return FALSE;
@@ -64,6 +79,9 @@ static gboolean wpeDisplayQtQuickConnect(WPEDisplay* display, GError** error)
 
     priv->eglDisplay = eglDisplay;
 
+    // On OHOS web content arrives in OH_NativeBuffers, imported through EGL_OHOS_native_buffer:
+    // there is no DRM device.
+#if !OS(OHOS)
     if (!epoxy_has_egl_extension(eglDisplay, "EGL_EXT_device_query")) {
         g_set_error_literal(error, WPE_VIEW_ERROR, WPE_VIEW_ERROR_RENDER_FAILED, "Failed to initialize rendering: 'EGL_EXT_device_query' not available");
         return FALSE;
@@ -93,6 +111,7 @@ static gboolean wpeDisplayQtQuickConnect(WPEDisplay* display, GError** error)
     }
 
     priv->drmDevice = adoptGRef(wpe_drm_device_new(drmDevice, drmRenderNode));
+#endif
     return TRUE;
 }
 
@@ -117,6 +136,25 @@ static WPEDRMDevice* wpeDisplayQtQuickGetDRMDevice(WPEDisplay* display)
     return WPE_DISPLAY_QTQUICK(display)->priv->drmDevice.get();
 }
 
+#if OS(OHOS)
+// There is no XKB data for the default keymap.
+static WPEKeymap* wpeDisplayQtQuickGetKeymap(WPEDisplay* display)
+{
+    auto* priv = WPE_DISPLAY_QTQUICK(display)->priv;
+    if (!priv->keymap)
+        priv->keymap = adoptGRef(wpe_keymap_qtquick_new());
+    return priv->keymap.get();
+}
+
+static WPEBufferFormats* wpeDisplayQtQuickGetPreferredBufferFormats(WPEDisplay*)
+{
+    auto* builder = wpe_buffer_formats_builder_new(nullptr);
+    wpe_buffer_formats_builder_append_group(builder, nullptr, WPE_BUFFER_FORMAT_USAGE_RENDERING);
+    wpe_buffer_formats_builder_append_format(builder, DRM_FORMAT_RGBA8888, 0);
+    return wpe_buffer_formats_builder_end(builder);
+}
+#endif
+
 static void wpe_display_qtquick_class_init(WPEDisplayQtQuickClass* displayQtQuickClass)
 {
     WPEDisplayClass* displayClass = WPE_DISPLAY_CLASS(displayQtQuickClass);
@@ -124,6 +162,10 @@ static void wpe_display_qtquick_class_init(WPEDisplayQtQuickClass* displayQtQuic
     displayClass->create_view = wpeDisplayQtQuickCreateView;
     displayClass->get_egl_display = wpeDisplayQtQuickGetEGLDisplay;
     displayClass->get_drm_device = wpeDisplayQtQuickGetDRMDevice;
+#if OS(OHOS)
+    displayClass->get_keymap = wpeDisplayQtQuickGetKeymap;
+    displayClass->get_preferred_buffer_formats = wpeDisplayQtQuickGetPreferredBufferFormats;
+#endif
 }
 
 WPEDisplay* wpe_display_qtquick_new(void)

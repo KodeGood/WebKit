@@ -114,6 +114,7 @@ private Q_SLOTS:
     void didUpdateScene();
     void invalidateSceneGraph();
     void updateWpeToplevelState();
+    void updateDevicePixelRatio();
 
 private:
     QSGNode* updatePaintNode(QSGNode*, UpdatePaintNodeData*) final;

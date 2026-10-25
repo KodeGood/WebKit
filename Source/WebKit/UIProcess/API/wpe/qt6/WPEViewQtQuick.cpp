@@ -52,6 +52,7 @@ struct _WPEViewQtQuickPrivate {
     GRefPtr<WPEBuffer> committedBuffer;
     bool bufferUpdateRequested;
     GLuint textureId;
+    QSize textureSize;
     QOpenGLContext* context;
     WPEQtView* wpeQtView;
 
@@ -185,14 +186,15 @@ void wpe_view_qtquick_invalidate_rendering(WPEViewQtQuick* view)
     priv->context = nullptr;
 }
 
-QSGTexture* wpe_view_qtquick_render_buffer_to_texture(WPEViewQtQuick* view, QSize size, GError** error)
+QSGTexture* wpe_view_qtquick_render_buffer_to_texture(WPEViewQtQuick* view, QSize, GError** error)
 {
     auto* priv = WPE_VIEW_QTQUICK(view)->priv;
 
     auto wrapNativeTexture = [&]() -> QSGTexture* {
         RELEASE_ASSERT(priv->wpeQtView->window());
 
-        auto texture = QNativeInterface::QSGOpenGLTexture::fromNative(priv->textureId, priv->wpeQtView->window(), size, QQuickWindow::TextureHasAlphaChannel);
+        // The buffer is in device pixels, the item in logical ones.
+        auto texture = QNativeInterface::QSGOpenGLTexture::fromNative(priv->textureId, priv->wpeQtView->window(), priv->textureSize, QQuickWindow::TextureHasAlphaChannel);
         if (!texture) [[unlikely]] {
             g_set_error_literal(error, WPE_VIEW_ERROR, WPE_VIEW_ERROR_RENDER_FAILED, "Failed to import QSOpenGLTexture from native OpenGL texture");
             return nullptr;
@@ -232,6 +234,7 @@ QSGTexture* wpe_view_qtquick_render_buffer_to_texture(WPEViewQtQuick* view, QSiz
 
     glFunctions->glBindTexture(GL_TEXTURE_2D, priv->textureId);
     imageTargetTexture2DOES(GL_TEXTURE_2D, eglImage);
+    priv->textureSize = QSize(wpe_buffer_get_width(priv->pendingBuffer.get()), wpe_buffer_get_height(priv->pendingBuffer.get()));
 
     return wrapNativeTexture();
 }
@@ -430,9 +433,10 @@ void wpe_view_dispatch_touch_event(WPEViewQtQuick *view, QTouchEvent *event)
     }
 
     auto modifiers = static_cast<WPEModifiers>(keyboardModifiersFromEvent(event));
+    auto source = event->device() && event->device()->type() == QInputDevice::DeviceType::TouchScreen ? WPE_INPUT_SOURCE_TOUCHSCREEN : WPE_INPUT_SOURCE_TOUCHPAD;
     for (auto& point : event->points()) {
         auto position = point.position();
-        auto* wpeEvent = wpe_event_touch_new(eventType, WPE_VIEW(view), WPE_INPUT_SOURCE_TOUCHPAD, event->timestamp(),
+        auto* wpeEvent = wpe_event_touch_new(eventType, WPE_VIEW(view), source, event->timestamp(),
             modifiers, point.id(), position.x(), position.y());
         wpe_view_event(WPE_VIEW(view), wpeEvent);
         wpe_event_unref(wpeEvent);

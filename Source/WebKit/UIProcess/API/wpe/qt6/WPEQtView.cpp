@@ -21,6 +21,7 @@
 #include "config.h"
 #include "WPEQtView.h"
 
+#include "WPEQtGLibEventLoop.h"
 #include "WPEQtViewLoadRequest.h"
 #include "WPEQtViewLoadRequestPrivate.h"
 #include "WPEQtViewPrivate.h"
@@ -110,6 +111,9 @@ void WPEQtView::createWebView()
     Q_D(WPEQtView);
     RELEASE_ASSERT(!d->m_webView);
 
+    // Before the first WebKit call, which binds WebKit's main RunLoop to the default GMainContext.
+    WPEQtGLibEventLoop::ensureIntegrated();
+
     GUniqueOutPtr<GError> error;
     auto* wpeDisplay = wpe_display_qtquick_new();
     if (!wpe_display_connect(wpeDisplay, &error.outPtr())) {
@@ -125,6 +129,7 @@ void WPEQtView::createWebView()
     auto* wpeView = webkit_web_view_get_wpe_view(d->m_webView.get());
     if (auto* wpeToplevel = wpe_view_get_toplevel(wpeView))
         wpe_toplevel_resize(wpeToplevel, d->m_size.width(), d->m_size.height());
+    updateDevicePixelRatio();
 
     wpe_view_map(wpeView); // FIXME: unmap when appropriate and implement can_be_mapped if needed.
 
@@ -148,6 +153,7 @@ void WPEQtView::createWebView()
     updateWpeToplevelState();
     connect(window(), &QQuickWindow::activeChanged, this, &WPEQtView::updateWpeToplevelState);
     connect(window(), &QQuickWindow::windowStateChanged, this, &WPEQtView::updateWpeToplevelState);
+    connect(window(), &QWindow::screenChanged, this, &WPEQtView::updateDevicePixelRatio);
 
     Q_EMIT webViewCreated();
 }
@@ -644,6 +650,18 @@ void WPEQtView::updateWpeToplevelState()
 
         wpe_toplevel_state_changed(wpeToplevel, static_cast<WPEToplevelState>(toplevelState));
     }
+}
+
+void WPEQtView::updateDevicePixelRatio()
+{
+    Q_D(WPEQtView);
+    if (!d->m_webView || !window())
+        return;
+
+    // The item size is in logical pixels; render the web content at the window's pixel ratio.
+    auto* wpeView = webkit_web_view_get_wpe_view(d->m_webView.get());
+    if (auto* wpeToplevel = wpe_view_get_toplevel(wpeView))
+        wpe_toplevel_scale_changed(wpeToplevel, window()->effectiveDevicePixelRatio());
 }
 
 WebKitWebView* WPEQtView::webView() const
