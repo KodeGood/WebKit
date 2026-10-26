@@ -33,6 +33,10 @@
 #include <wtf/text/CStringView.h>
 #include <wtf/text/StringCommon.h>
 
+#if OS(OHOS)
+#include <deviceinfo.h>
+#endif
+
 namespace WTF {
 
 static std::optional<ChassisType> readMachineInfoChassisType()
@@ -133,12 +137,34 @@ static std::optional<ChassisType> readACPIChassisType()
     return std::nullopt;
 }
 
+#if OS(OHOS)
+// OpenHarmony has no machine-info, DMI or ACPI data, but reports its device type.
+static std::optional<ChassisType> readOHOSDeviceType()
+{
+    const char* deviceType = OH_GetDeviceType();
+    if (!deviceType)
+        return std::nullopt;
+
+    // "default" is a phone.
+    auto deviceTypeView = CStringView::unsafeFromUTF8(deviceType);
+    if (deviceTypeView == "phone"_s || deviceTypeView == "default"_s || deviceTypeView == "tablet"_s
+        || deviceTypeView == "wearable"_s || deviceTypeView == "liteWearable"_s)
+        return ChassisType::Mobile;
+
+    return ChassisType::Desktop;
+}
+#endif
+
 ChassisType chassisType()
 {
     static ChassisType chassisType;
     static std::once_flag initializeChassis;
     std::call_once(initializeChassis, [] {
         auto optionalChassisType = readMachineInfoChassisType();
+#if OS(OHOS)
+        if (!optionalChassisType)
+            optionalChassisType = readOHOSDeviceType();
+#endif
         if (!optionalChassisType)
             optionalChassisType = readDMIChassisType();
         if (!optionalChassisType)

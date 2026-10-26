@@ -41,6 +41,8 @@ This module supports checking for the following components:
   The AbilityKit native child process ``libchild_process`` library.
 ``AbilityRuntime``
   The AbilityKit application-context ``libability_runtime`` library.
+``DeviceInfo``
+  The device information ``libdeviceinfo_ndk.z`` library.
 
 Imported Targets
 ^^^^^^^^^^^^^^^^
@@ -153,6 +155,11 @@ _OHOSDefineComponent(AbilityRuntime
     ability_runtime
     AbilityKit/ability_runtime/application_context.h
     OH_AbilityRuntime_ApplicationContextGetCacheDir
+)
+_OHOSDefineComponent(DeviceInfo
+    deviceinfo_ndk.z
+    deviceinfo.h
+    OH_GetDeviceType
 )
 
 foreach (component IN LISTS OHOS_FIND_COMPONENTS)

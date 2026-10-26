@@ -40,7 +40,7 @@ else ()
 endif ()
 
 if (OHOS)
-  find_package(OHOS REQUIRED COMPONENTS NativeBuffer NativeWindow Log IPC ChildProcess AbilityRuntime)
+  find_package(OHOS REQUIRED COMPONENTS NativeBuffer NativeWindow Log IPC ChildProcess AbilityRuntime DeviceInfo)
 endif ()
 
 WEBKIT_OPTION_BEGIN()

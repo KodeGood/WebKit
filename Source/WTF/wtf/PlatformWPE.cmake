@@ -108,7 +108,7 @@ if (ANDROID)
 endif ()
 
 if (OHOS)
-    list(APPEND WTF_LIBRARIES OHOS::NativeBuffer OHOS::Log)
+    list(APPEND WTF_LIBRARIES OHOS::DeviceInfo OHOS::NativeBuffer OHOS::Log)
 endif ()
 
 if (USE_LIBBACKTRACE)
