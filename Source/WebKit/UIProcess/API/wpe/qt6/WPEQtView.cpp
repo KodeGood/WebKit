@@ -29,6 +29,7 @@
 
 #include <QBuffer>
 #include <QImage>
+#include <QInputMethodEvent>
 #include <QQmlEngine>
 #include <QQuickWindow>
 #include <QSGSimpleTextureNode>
@@ -708,6 +709,39 @@ void WPEQtView::focusOutEvent(QFocusEvent*)
         return;
     auto* wpeView = webkit_web_view_get_wpe_view(d->m_webView.get());
     wpe_view_focus_out(WPE_VIEW(wpeView));
+}
+
+QVariant WPEQtView::inputMethodQuery(Qt::InputMethodQuery query) const
+{
+    Q_D(const WPEQtView);
+    if (d->m_webView) {
+        auto* wpeView = webkit_web_view_get_wpe_view(d->m_webView.get());
+        if (auto* context = wpe_view_qtquick_get_input_method_context(WPE_VIEW_QTQUICK(wpeView))) {
+            auto value = wpe_input_method_context_qtquick_query(context, query);
+            if (value.isValid())
+                return value;
+        }
+    }
+    return QQuickItem::inputMethodQuery(query);
+}
+
+void WPEQtView::inputMethodEvent(QInputMethodEvent* event)
+{
+    Q_D(WPEQtView);
+    if (!d->m_webView) {
+        QQuickItem::inputMethodEvent(event);
+        return;
+    }
+
+    auto* wpeView = webkit_web_view_get_wpe_view(d->m_webView.get());
+    auto* context = wpe_view_qtquick_get_input_method_context(WPE_VIEW_QTQUICK(wpeView));
+    if (!context) {
+        QQuickItem::inputMethodEvent(event);
+        return;
+    }
+
+    wpe_input_method_context_qtquick_handle_event(context, event);
+    event->accept();
 }
 
 void WPEQtView::invalidateSceneGraph()

@@ -26,6 +26,7 @@
 #include "config.h"
 #include "WPEDisplayQtQuick.h"
 
+#include "WPEInputMethodContextQtQuick.h"
 #include "WPEKeymapQtQuick.h"
 #include "WPEToplevelQtQuick.h"
 #include "WPEViewQtQuick.h"
@@ -126,6 +127,11 @@ static WPEView* wpeDisplayQtQuickCreateView(WPEDisplay* display)
     return view;
 }
 
+static WPEInputMethodContext* wpeDisplayQtQuickCreateInputMethodContext(WPEDisplay*, WPEView* view)
+{
+    return wpe_input_method_context_qtquick_new(view);
+}
+
 static gpointer wpeDisplayQtQuickGetEGLDisplay(WPEDisplay* display, GError**)
 {
     return WPE_DISPLAY_QTQUICK(display)->priv->eglDisplay;
@@ -160,6 +166,7 @@ static void wpe_display_qtquick_class_init(WPEDisplayQtQuickClass* displayQtQuic
     WPEDisplayClass* displayClass = WPE_DISPLAY_CLASS(displayQtQuickClass);
     displayClass->connect = wpeDisplayQtQuickConnect;
     displayClass->create_view = wpeDisplayQtQuickCreateView;
+    displayClass->create_input_method_context = wpeDisplayQtQuickCreateInputMethodContext;
     displayClass->get_egl_display = wpeDisplayQtQuickGetEGLDisplay;
     displayClass->get_drm_device = wpeDisplayQtQuickGetDRMDevice;
 #if OS(OHOS)

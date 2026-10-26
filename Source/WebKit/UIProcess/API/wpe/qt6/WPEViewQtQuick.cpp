@@ -32,6 +32,7 @@
 #include <wtf/SortedArrayMap.h>
 #include <wtf/glib/GRefPtr.h>
 #include <wtf/glib/GUniquePtr.h>
+#include <wtf/glib/GWeakPtr.h>
 #include <wtf/glib/RunLoopSourcePriority.h>
 #include <wtf/glib/WTFGType.h>
 
@@ -55,6 +56,9 @@ struct _WPEViewQtQuickPrivate {
     QSize textureSize;
     QOpenGLContext* context;
     WPEQtView* wpeQtView;
+
+    // The context of the focused editable element, see WPEInputMethodContextQtQuick.
+    GWeakPtr<WPEInputMethodContextQtQuick> inputMethodContext;
 
     // Event handling
     bool isHovering;
@@ -250,6 +254,21 @@ void wpe_view_qtquick_did_update_scene(WPEViewQtQuick* view)
         wpe_view_buffer_released(WPE_VIEW(view), priv->committedBuffer.get());
     priv->committedBuffer = WTF::move(priv->pendingBuffer);
     wpe_view_buffer_rendered(WPE_VIEW(view), priv->committedBuffer.get());
+}
+
+WPEQtView* wpe_view_qtquick_get_qt_view(WPEViewQtQuick* view)
+{
+    return view->priv->wpeQtView;
+}
+
+WPEInputMethodContextQtQuick* wpe_view_qtquick_get_input_method_context(WPEViewQtQuick* view)
+{
+    return view->priv->inputMethodContext.get();
+}
+
+void wpe_view_qtquick_set_input_method_context(WPEViewQtQuick* view, WPEInputMethodContextQtQuick* context)
+{
+    view->priv->inputMethodContext.reset(context);
 }
 
 // Event handling

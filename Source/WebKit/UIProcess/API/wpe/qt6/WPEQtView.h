@@ -112,6 +112,9 @@ protected:
     void focusInEvent(QFocusEvent*) override;
     void focusOutEvent(QFocusEvent*) override;
 
+    QVariant inputMethodQuery(Qt::InputMethodQuery) const override;
+    void inputMethodEvent(QInputMethodEvent*) override;
+
 private Q_SLOTS:
     void configureWindow();
     void createWebView();

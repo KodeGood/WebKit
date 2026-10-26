@@ -637,6 +637,7 @@ if (ENABLE_WPE_QT_API)
     #        not on MacOS or Windows.
     add_library(qtwpe SHARED
         UIProcess/API/wpe/qt6/WPEDisplayQtQuick.cpp
+        UIProcess/API/wpe/qt6/WPEInputMethodContextQtQuick.cpp
         UIProcess/API/wpe/qt6/WPEKeymapQtQuick.cpp
         UIProcess/API/wpe/qt6/WPEToplevelQtQuick.cpp
         UIProcess/API/wpe/qt6/WPEViewQtQuick.cpp

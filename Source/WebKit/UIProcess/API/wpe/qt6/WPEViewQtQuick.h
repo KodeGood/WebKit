@@ -27,6 +27,7 @@
 #define WPEViewQtQuick_h
 
 #include "WPEDisplayQtQuick.h"
+#include "WPEInputMethodContextQtQuick.h"
 
 class QHoverEvent;
 class QKeyEvent;
@@ -48,6 +49,10 @@ gboolean         wpe_view_qtquick_initialize_rendering     (WPEViewQtQuick    *v
 void             wpe_view_qtquick_invalidate_rendering     (WPEViewQtQuick    *view);
 QSGTexture*      wpe_view_qtquick_render_buffer_to_texture (WPEViewQtQuick    *view, QSize             size, GError **error);
 void             wpe_view_qtquick_did_update_scene         (WPEViewQtQuick    *view);
+WPEQtView*       wpe_view_qtquick_get_qt_view              (WPEViewQtQuick    *view);
+
+WPEInputMethodContextQtQuick* wpe_view_qtquick_get_input_method_context (WPEViewQtQuick *view);
+void             wpe_view_qtquick_set_input_method_context (WPEViewQtQuick    *view, WPEInputMethodContextQtQuick *context);
 
 void             wpe_view_dispatch_mouse_press_event       (WPEViewQtQuick    *view, QMouseEvent *);
 void             wpe_view_dispatch_mouse_move_event        (WPEViewQtQuick    *view, QMouseEvent *);
