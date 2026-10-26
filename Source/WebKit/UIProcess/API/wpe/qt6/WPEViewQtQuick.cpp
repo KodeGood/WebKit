@@ -414,11 +414,49 @@ void wpe_view_dispatch_hover_leave_event(WPEViewQtQuick *view, QHoverEvent *)
 }
 
 // Keyboard events
+
+// The key events that Qt synthesizes, for example for the editing keys of an input method,
+// have no native key.
+static guint keyvalFromEvent(QKeyEvent* event)
+{
+    if (auto keyval = event->nativeVirtualKey())
+        return keyval;
+
+    switch (event->key()) {
+    case Qt::Key_Backspace:
+        return WPE_KEY_BackSpace;
+    case Qt::Key_Delete:
+        return WPE_KEY_Delete;
+    case Qt::Key_Return:
+        return WPE_KEY_Return;
+    case Qt::Key_Enter:
+        return WPE_KEY_KP_Enter;
+    case Qt::Key_Tab:
+        return WPE_KEY_Tab;
+    case Qt::Key_Escape:
+        return WPE_KEY_Escape;
+    case Qt::Key_Left:
+        return WPE_KEY_Left;
+    case Qt::Key_Up:
+        return WPE_KEY_Up;
+    case Qt::Key_Right:
+        return WPE_KEY_Right;
+    case Qt::Key_Down:
+        return WPE_KEY_Down;
+    case Qt::Key_Home:
+        return WPE_KEY_Home;
+    case Qt::Key_End:
+        return WPE_KEY_End;
+    default:
+        return 0;
+    }
+}
+
 void wpe_view_dispatch_key_press_event(WPEViewQtQuick *view, QKeyEvent *event)
 {
     auto modifiers = static_cast<WPEModifiers>(keyboardModifiersFromEvent(event));
     auto* wpeEvent = wpe_event_keyboard_new(WPE_EVENT_KEYBOARD_KEY_DOWN, WPE_VIEW(view), WPE_INPUT_SOURCE_KEYBOARD, event->timestamp(),
-        modifiers, event->key(), event->nativeVirtualKey());
+        modifiers, event->key(), keyvalFromEvent(event));
     wpe_view_event(WPE_VIEW(view), wpeEvent);
     wpe_event_unref(wpeEvent);
 }
@@ -427,7 +465,7 @@ void wpe_view_dispatch_key_release_event(WPEViewQtQuick *view, QKeyEvent *event)
 {
     auto modifiers = static_cast<WPEModifiers>(keyboardModifiersFromEvent(event));
     auto* wpeEvent = wpe_event_keyboard_new(WPE_EVENT_KEYBOARD_KEY_UP, WPE_VIEW(view), WPE_INPUT_SOURCE_KEYBOARD, event->timestamp(),
-        modifiers, event->key(), event->nativeVirtualKey());
+        modifiers, event->key(), keyvalFromEvent(event));
     wpe_view_event(WPE_VIEW(view), wpeEvent);
     wpe_event_unref(wpeEvent);
 }
